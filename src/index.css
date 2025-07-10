@@ -97,7 +97,8 @@
   }
 
   .glass-sidebar {
-    @apply backdrop-blur-xl bg-sidebar-background/80 border-r border-sidebar-border/30;
+    @apply backdrop-blur-xl border-r border-sidebar-border/30;
+    background-color: hsl(var(--sidebar-background) / 0.8);
     box-shadow: var(--shadow-glass);
   }
 
