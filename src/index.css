@@ -43,7 +43,7 @@
     --radius: 0.75rem;
 
     /* Sidebar con efecto Glassmorphism */
-    --sidebar-background: 215 15% 12% / 0.8; /* Semi-transparente */
+    --sidebar-background: 215 15% 12%; /* Sin alpha para compatibilidad */
     --sidebar-foreground: 220 14% 83%;
     --sidebar-primary: 199 89% 64%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -97,7 +97,7 @@
   }
 
   .glass-sidebar {
-    @apply backdrop-blur-xl bg-sidebar-background border-r border-sidebar-border/30;
+    @apply backdrop-blur-xl bg-sidebar-background/80 border-r border-sidebar-border/30;
     box-shadow: var(--shadow-glass);
   }
 
