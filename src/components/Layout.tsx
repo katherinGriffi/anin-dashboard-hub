@@ -11,17 +11,15 @@ interface LayoutProps {
 
 const Layout = ({ children }: LayoutProps) => {
   return (
-    <SidebarProvider defaultOpen={true} collapsedWidth={64}>
+    <SidebarProvider defaultOpen={true}>
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header con trigger para mobile */}
           <header className="h-14 flex items-center justify-between px-4 border-b border-border/50 bg-card/50 backdrop-blur-sm lg:hidden">
-            <SidebarTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Menu className="h-4 w-4" />
-              </Button>
+            <SidebarTrigger>
+              <Menu className="h-4 w-4" />
             </SidebarTrigger>
             
             <h1 className="anin-logo text-lg">ANIN</h1>
