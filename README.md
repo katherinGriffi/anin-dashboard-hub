@@ -1,17 +1,18 @@
 
-# ANIN - Sistema de Gestión de Dashboards
+# ANIN - Dashboard de Vanguardia ⚡
 
-![ANIN Logo](https://img.shields.io/badge/ANIN-Dashboard%20System-007BFF?style=for-the-badge)
+![ANIN Logo](https://img.shields.io/badge/ANIN-Dashboard%20de%20Vanguardia-38BDF8?style=for-the-badge&logo=react)
 
-Una aplicación web moderna (SPA) desarrollada con React + Vite para la gestión de dashboards de monitoreo de actividades.
+Una aplicación web de **diseño de vanguardia** con React + Vite que implementa **Glassmorphism**, paleta "Neón Nocturno" y un layout híbrido revolucionario para dashboards de monitoreo.
 
-## 🚀 Características
+## ✨ Características de Vanguardia
 
-- **Login Simulado**: Sistema de autenticación frontend-only
-- **Layout Responsive**: Barra lateral colapsable para dispositivos móviles
-- **6 Dashboards**: Páginas con iframes para embeber dashboards externos
-- **Tema Oscuro**: Diseño moderno con colores personalizados
-- **Tipografía**: Fuente Inter para una experiencia visual profesional
+- **🔮 Estética Glassmorphism**: Efectos de cristal esmerilado con backdrop-blur
+- **🌃 Paleta "Neón Nocturno"**: Colores sofisticados (#0D1117, #38BDF8, #E83D84)
+- **🚀 Layout Híbrido**: Header fijo + Sidebar colapsable con micro-interacciones
+- **💫 Animaciones Fluidas**: Transiciones suaves y efectos hover con glow neón
+- **📱 7 Dashboards**: Incluyendo la nueva sección de ClickUp
+- **🎯 Iconografía Moderna**: Lucide Icons de alta calidad
 
 ## 🎯 Credenciales de Acceso
 
@@ -22,14 +23,15 @@ Contraseña: Anin.2025*
 
 ## 📋 Dashboards Disponibles
 
-| Dashboard | Ruta | Descripción |
-|-----------|------|-------------|
-| Gestión General | `/dashboard/general` | Vista general de actividades |
-| IREN Norte | `/dashboard/iren-norte` | Dashboard IREN Norte |
-| IREN Sur | `/dashboard/iren-sur` | Dashboard IREN Sur |
-| La Caleta | `/dashboard/la-caleta` | Dashboard La Caleta |
-| Lanatta | `/dashboard/lanatta` | Dashboard Lanatta |
-| Plan Mil | `/dashboard/plan-mil` | Dashboard Plan Mil |
+| Dashboard | Ruta | Descripción | Icono |
+|-----------|------|-------------|-------|
+| Gestión General | `/dashboard/general` | Vista general de actividades | LayoutGrid |
+| IREN Norte | `/dashboard/iren-norte` | Dashboard IREN Norte | Compass |
+| IREN Sur | `/dashboard/iren-sur` | Dashboard IREN Sur | MapPin |
+| La Caleta | `/dashboard/la-caleta` | Dashboard La Caleta | Anchor |
+| Lanatta | `/dashboard/lanatta` | Dashboard Lanatta | Ship |
+| Plan Mil | `/dashboard/plan-mil` | Dashboard Plan Mil | Zap |
+| **🆕 ClickUp** | `/dashboard/clickup` | **Gestión de proyectos ClickUp** | CheckSquare |
 
 ## 🛠️ Tecnologías
 
@@ -174,6 +176,11 @@ Para configurar las URLs reales de los dashboards, edita los archivos en `src/pa
 - [ ] `DashboardLaCaleta.tsx` - URL del dashboard de La Caleta
 - [ ] `DashboardLanatta.tsx` - URL del dashboard de Lanatta
 - [ ] `DashboardPlanMil.tsx` - URL del dashboard de Plan Mil
+- [ ] **🆕 `DashboardClickUp.tsx`** - URL del dashboard de ClickUp
+
+### TODO: Logo ANIN
+
+- [ ] **Layout.tsx línea 22-26**: Reemplazar div temporal con logo real de ANIN
 
 ## 🎨 Personalización de Estilos
 

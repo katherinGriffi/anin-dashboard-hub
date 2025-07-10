@@ -4,48 +4,61 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definición del sistema de diseño para ANIN */
+/* Paleta de Colores "Neón Nocturno" - Diseño de Vanguardia ANIN */
 
 @layer base {
   :root {
-    --background: 220 13% 10%;
-    --foreground: 210 40% 98%;
+    /* Fondo Principal - Noche Profunda */
+    --background: 215 27% 7%;  /* #0D1117 */
+    --foreground: 220 14% 83%; /* #C9D1D9 - Nebulosa */
 
-    --card: 220 13% 12%;
-    --card-foreground: 210 40% 98%;
+    /* Contenedores - Abismo Suave */
+    --card: 215 15% 12%;       /* #161B22 */
+    --card-foreground: 220 14% 83%;
 
-    --popover: 220 13% 12%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 215 15% 12%;
+    --popover-foreground: 220 14% 83%;
 
-    --primary: 213 94% 68%;
+    /* Acento Principal - Azul Eléctrico */
+    --primary: 199 89% 64%;    /* #38BDF8 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 13% 18%;
-    --secondary-foreground: 210 40% 98%;
+    /* Acento Secundario - Magenta Energético */
+    --secondary: 330 81% 60%;  /* #E83D84 */
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 220 13% 16%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 215 15% 15%;
+    --muted-foreground: 220 14% 65%;
 
-    --accent: 220 13% 18%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 199 89% 64%;     /* Azul Eléctrico */
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 330 81% 60%; /* Magenta para alertas */
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 13% 20%;
-    --input: 220 13% 18%;
-    --ring: 213 94% 68%;
+    --border: 215 15% 18%;
+    --input: 215 15% 15%;
+    --ring: 199 89% 64%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 220 13% 8%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 213 94% 68%;
+    /* Sidebar con efecto Glassmorphism */
+    --sidebar-background: 215 15% 12% / 0.8; /* Semi-transparente */
+    --sidebar-foreground: 220 14% 83%;
+    --sidebar-primary: 199 89% 64%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 13% 16%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 220 13% 20%;
-    --sidebar-ring: 213 94% 68%;
+    --sidebar-accent: 215 15% 18%;
+    --sidebar-accent-foreground: 220 14% 83%;
+    --sidebar-border: 215 15% 25% / 0.2;
+    --sidebar-ring: 199 89% 64%;
+
+    /* Gradientes personalizados */
+    --gradient-glass: linear-gradient(135deg, hsl(215 15% 12% / 0.1), hsl(215 15% 18% / 0.05));
+    --gradient-neon: linear-gradient(135deg, hsl(199 89% 64%), hsl(330 81% 60%));
+    
+    /* Sombras con glow neón */
+    --shadow-neon: 0 0 20px hsl(199 89% 64% / 0.3);
+    --shadow-glass: 0 8px 32px hsl(0 0% 0% / 0.3);
   }
 }
 
@@ -70,10 +83,58 @@
 
 @layer components {
   .anin-logo {
-    @apply text-2xl font-bold text-primary;
+    @apply text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent;
   }
   
   .dashboard-iframe {
-    @apply w-full h-full border-0;
+    @apply w-full h-full border-0 rounded-xl;
+  }
+
+  /* Glassmorphism Effects */
+  .glass-effect {
+    @apply backdrop-blur-md bg-card/80 border border-border/20;
+    box-shadow: var(--shadow-glass);
+  }
+
+  .glass-sidebar {
+    @apply backdrop-blur-xl bg-sidebar-background border-r border-sidebar-border/30;
+    box-shadow: var(--shadow-glass);
+  }
+
+  .glass-header {
+    @apply backdrop-blur-md bg-card/60 border-b border-border/20;
+    box-shadow: 0 4px 16px hsl(0 0% 0% / 0.1);
+  }
+
+  /* Transiciones suaves */
+  .smooth-transition {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  /* Efectos hover con glow neón */
+  .neon-hover {
+    @apply hover:shadow-[0_0_20px_hsl(var(--primary)/0.4)] smooth-transition;
+  }
+
+  /* Fade-in animation */
+  .fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Pulse para elementos activos */
+  .pulse-neon {
+    @apply animate-pulse;
+    filter: drop-shadow(0 0 8px hsl(var(--primary) / 0.6));
   }
 }

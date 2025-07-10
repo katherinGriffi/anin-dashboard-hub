@@ -14,6 +14,7 @@ import DashboardIrenSur from './pages/DashboardIrenSur';
 import DashboardLaCaleta from './pages/DashboardLaCaleta';
 import DashboardLanatta from './pages/DashboardLanatta';
 import DashboardPlanMil from './pages/DashboardPlanMil';
+import DashboardClickUp from './pages/DashboardClickUp';
 
 const queryClient = new QueryClient();
 
@@ -68,6 +69,12 @@ const AppRoutes = () => {
       <Route path="/dashboard/plan-mil" element={
         <ProtectedRoute>
           <DashboardPlanMil />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/dashboard/clickup" element={
+        <ProtectedRoute>
+          <DashboardClickUp />
         </ProtectedRoute>
       } />
 

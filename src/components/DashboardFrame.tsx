@@ -42,45 +42,52 @@ const DashboardFrame = ({ title, description, url }: DashboardFrameProps) => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-card">
-      {/* Header del dashboard */}
-      <div className="flex items-center justify-between p-4 border-b border-border/50 bg-card/50 backdrop-blur-sm">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">{title}</h2>
-          <p className="text-sm text-muted-foreground">{description}</p>
+    <div className="h-full flex flex-col m-4">
+      {/* Header del dashboard con glassmorphism */}
+      <div className="glass-effect rounded-t-xl p-6 border-b-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground mb-2">{title}</h2>
+            <p className="text-muted-foreground">{description}</p>
+          </div>
+          
+          <Button
+            onClick={openInNewTab}
+            variant="outline"
+            size="sm"
+            className="neon-hover border-primary/30 hover:border-primary"
+          >
+            <ExternalLink className="h-4 w-4 mr-2" />
+            Abrir en nueva pestaña
+          </Button>
         </div>
-        
-        <Button
-          onClick={openInNewTab}
-          variant="outline"
-          size="sm"
-          className="flex items-center gap-2"
-        >
-          <ExternalLink className="h-4 w-4" />
-          Abrir en nueva pestaña
-        </Button>
       </div>
 
-      {/* Contenido del iframe */}
-      <div className="flex-1 relative">
+      {/* Contenido del iframe con glassmorphism */}
+      <div className="flex-1 relative glass-effect rounded-b-xl border-t-0 overflow-hidden">
         {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10">
-            <div className="flex flex-col items-center gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Cargando dashboard...</p>
+          <div className="absolute inset-0 flex items-center justify-center bg-background/90 backdrop-blur-md z-10 rounded-b-xl">
+            <div className="flex flex-col items-center gap-4">
+              <div className="relative">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <div className="absolute inset-0 h-10 w-10 rounded-full border-2 border-primary/20"></div>
+              </div>
+              <p className="text-muted-foreground font-medium">Cargando dashboard...</p>
             </div>
           </div>
         )}
 
         {hasError && (
-          <div className="absolute inset-0 flex items-center justify-center p-8 z-10">
-            <Alert className="max-w-md">
-              <AlertTriangle className="h-4 w-4" />
+          <div className="absolute inset-0 flex items-center justify-center p-8 z-10 rounded-b-xl">
+            <Alert className="max-w-md glass-effect border-destructive/30">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
               <AlertDescription className="mt-2">
-                No se pudo cargar el dashboard. Verifique la URL en el código fuente.
+                <span className="font-medium">No se pudo cargar el dashboard.</span>
                 <br />
-                <span className="text-xs text-muted-foreground mt-2 block">
-                  URL actual: {dashboardUrl}
+                Verifique la URL en el código fuente.
+                <br />
+                <span className="text-xs text-muted-foreground mt-2 block font-mono">
+                  URL: {dashboardUrl}
                 </span>
               </AlertDescription>
             </Alert>
