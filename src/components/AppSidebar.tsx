@@ -11,7 +11,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
@@ -67,13 +66,13 @@ const dashboardItems = [
 ];
 
 export function AppSidebar() {
-  const { collapsed } = useSidebar();
+  const { state } = useSidebar();
   const { logout } = useAuth();
   const location = useLocation();
   const currentPath = location.pathname;
+  const isCollapsed = state === "collapsed";
 
   const isActive = (path: string) => currentPath === path;
-  const isExpanded = dashboardItems.some((item) => isActive(item.url));
 
   const getNavClass = ({ isActive }: { isActive: boolean }) =>
     isActive 
@@ -86,8 +85,8 @@ export function AppSidebar() {
 
   return (
     <Sidebar
-      className={`${collapsed ? "w-16" : "w-64"} transition-all duration-300 border-r border-border/50`}
-      collapsible
+      className={`${isCollapsed ? "w-16" : "w-64"} transition-all duration-300 border-r border-border/50`}
+      collapsible="icon"
     >
       <SidebarContent className="flex flex-col h-full">
         {/* Header con logo */}
@@ -96,7 +95,7 @@ export function AppSidebar() {
             <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
               <Shield className="w-5 h-5 text-primary" />
             </div>
-            {!collapsed && (
+            {!isCollapsed && (
               <div>
                 <h1 className="anin-logo text-xl">ANIN</h1>
                 <p className="text-xs text-muted-foreground">Dashboard System</p>
@@ -107,8 +106,8 @@ export function AppSidebar() {
 
         {/* Menu de dashboards */}
         <div className="flex-1 overflow-auto">
-          <SidebarGroup open={isExpanded}>
-            <SidebarGroupLabel className={collapsed ? "hidden" : ""}>
+          <SidebarGroup>
+            <SidebarGroupLabel className={isCollapsed ? "hidden" : ""}>
               Dashboards
             </SidebarGroupLabel>
 
@@ -121,10 +120,10 @@ export function AppSidebar() {
                         to={item.url} 
                         end 
                         className={getNavClass}
-                        title={collapsed ? item.title : undefined}
+                        title={isCollapsed ? item.title : undefined}
                       >
-                        <item.icon className={`h-5 w-5 ${collapsed ? "mx-auto" : "mr-3"}`} />
-                        {!collapsed && (
+                        <item.icon className={`h-5 w-5 ${isCollapsed ? "mx-auto" : "mr-3"}`} />
+                        {!isCollapsed && (
                           <div className="flex flex-col">
                             <span className="text-sm font-medium">{item.title}</span>
                             <span className="text-xs text-muted-foreground">{item.description}</span>
@@ -144,12 +143,12 @@ export function AppSidebar() {
           <Button
             onClick={handleLogout}
             variant="outline"
-            size={collapsed ? "icon" : "default"}
+            size={isCollapsed ? "icon" : "default"}
             className="w-full hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20"
-            title={collapsed ? "Cerrar Sesión" : undefined}
+            title={isCollapsed ? "Cerrar Sesión" : undefined}
           >
-            <LogOut className={`h-4 w-4 ${collapsed ? "" : "mr-2"}`} />
-            {!collapsed && "Cerrar Sesión"}
+            <LogOut className={`h-4 w-4 ${isCollapsed ? "" : "mr-2"}`} />
+            {!isCollapsed && "Cerrar Sesión"}
           </Button>
         </div>
       </SidebarContent>
