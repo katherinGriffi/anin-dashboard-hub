@@ -1,9 +1,8 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom"; // ✨ 1. Importa Outlet
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
 import Layout from '@/components/Layout';
 import Index from "./pages/Index";
@@ -18,70 +17,48 @@ import DashboardClickUp from './pages/DashboardClickUp';
 
 const queryClient = new QueryClient();
 
-// Componente para rutas protegidas
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+// ✨ 2. Componente de Ruta de Layout Protegido
+// Este componente se renderiza UNA SOLA VEZ para todas las rutas del dashboard.
+const ProtectedLayoutRoute = () => {
   const { isAuthenticated } = useAuth();
-  
+
   if (!isAuthenticated) {
+    // Si no está autenticado, lo redirige a la página de inicio/login
     return <Navigate to="/" replace />;
   }
 
-  return <Layout>{children}</Layout>;
+  // Si está autenticado, renderiza el Layout.
+  // El <Outlet /> es el espacio donde se cargarán las páginas hijas (los dashboards).
+  return (
+    <Layout>
+      <Outlet />
+    </Layout>
+  );
 };
 
 // Componente principal de rutas
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* Ruta pública para el login/inicio */}
       <Route path="/" element={<Index />} />
-      
-      {/* Rutas protegidas de dashboards */}
-      <Route path="/dashboard/general" element={
-        <ProtectedRoute>
-          <DashboardGeneral />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/dashboard/iren-norte" element={
-        <ProtectedRoute>
-          <DashboardIrenNorte />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/dashboard/iren-sur" element={
-        <ProtectedRoute>
-          <DashboardIrenSur />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/dashboard/la-caleta" element={
-        <ProtectedRoute>
-          <DashboardLaCaleta />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/dashboard/lanatta" element={
-        <ProtectedRoute>
-          <DashboardLanatta />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/dashboard/plan-mil" element={
-        <ProtectedRoute>
-          <DashboardPlanMil />
-        </ProtectedRoute>
-      } />
-      
-      <Route path="/dashboard/clickup" element={
-        <ProtectedRoute>
-          <DashboardClickUp />
-        </ProtectedRoute>
-      } />
 
-      {/* Redirección por defecto a dashboard general para usuarios autenticados */}
-      <Route path="/dashboard" element={<Navigate to="/dashboard/general" replace />} />
-      
-      {/* Página 404 */}
+      {/* ✨ 3. Rutas anidadas para el dashboard */}
+      {/* Todas las rutas de dashboard ahora son hijas de ProtectedLayoutRoute */}
+      <Route element={<ProtectedLayoutRoute />}>
+        <Route path="/dashboard/general" element={<DashboardGeneral />} />
+        <Route path="/dashboard/iren-norte" element={<DashboardIrenNorte />} />
+        <Route path="/dashboard/iren-sur" element={<DashboardIrenSur />} />
+        <Route path="/dashboard/la-caleta" element={<DashboardLaCaleta />} />
+        <Route path="/dashboard/lanatta" element={<DashboardLanatta />} />
+        <Route path="/dashboard/plan-mil" element={<DashboardPlanMil />} />
+        <Route path="/dashboard/clickup" element={<DashboardClickUp />} />
+        
+        {/* Redirección por defecto */}
+        <Route path="/dashboard" element={<Navigate to="/dashboard/general" replace />} />
+      </Route>
+
+      {/* Página 404 para cualquier otra ruta */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

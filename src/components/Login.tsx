@@ -42,7 +42,7 @@ const Login = () => {
             <div>
               <CardTitle className="anin-logo text-3xl">ANIN</CardTitle>
               <CardDescription className="text-muted-foreground mt-2">
-                Sistema de Gestión de Dashboards
+                Sistema de Gestión de Datos
               </CardDescription>
             </div>
           </CardHeader>
@@ -99,13 +99,9 @@ const Login = () => {
               </Button>
             </form>
 
-            <div className="mt-6 p-4 bg-muted/30 rounded-lg">
-              <p className="text-sm text-muted-foreground text-center">
-                <strong>Credenciales de prueba:</strong><br />
-                Usuario: admin<br />
-                Contraseña: Anin.2025*
-              </p>
-            </div>
+        
+
+           
           </CardContent>
         </Card>
       </div>

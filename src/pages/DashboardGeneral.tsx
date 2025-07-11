@@ -7,7 +7,7 @@ const DashboardGeneral = () => {
       title="Gestión de Actividades General"
       description="Vista general del sistema de gestión de actividades"
       // TODO: Reemplazar con la URL real del dashboard de Gestión General
-      url="https://ejemplo-dashboard-general.com"
+      url="https://app.powerbi.com/view?r=eyJrIjoiYmE4MWJjMTAtNjMyMC00MzJlLWE4ZmMtNTA3OTQxY2NmZDFiIiwidCI6IjkzN2JjYzgyLWZkYmYtNGYwMC1hOWUxLTUyN2U3NWUxMzU1MyIsImMiOjR9"
     />
   );
 };

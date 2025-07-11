@@ -1,5 +1,4 @@
-
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -22,21 +21,27 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  // ✨ CORRECCIÓN: Inicializa el estado directamente desde localStorage.
+  // Esta función se ejecuta UNA SOLA VEZ al inicio, evitando el parpadeo.
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return localStorage.getItem('anin-auth') === 'true';
+  });
 
-  // Verificar autenticación persistente al cargar
+  // ✨ ELIMINADO: El useEffect ya no es necesario gracias a la inicialización síncrona.
+  /*
   useEffect(() => {
     const auth = localStorage.getItem('anin-auth');
     if (auth === 'true') {
       setIsAuthenticated(true);
     }
   }, []);
+  */
 
   const login = (username: string, password: string): boolean => {
     // Credenciales específicas para ANIN
-    if (username === 'admin' && password === 'Anin.2025*') {
-      setIsAuthenticated(true);
+    if (username === 'user@anin.gob.pe' && password === 'anin@2025') {
       localStorage.setItem('anin-auth', 'true');
+      setIsAuthenticated(true);
       console.log('Login exitoso para usuario:', username);
       return true;
     }
@@ -45,8 +50,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const logout = () => {
-    setIsAuthenticated(false);
     localStorage.removeItem('anin-auth');
+    setIsAuthenticated(false);
     console.log('Usuario deslogueado');
   };
 
