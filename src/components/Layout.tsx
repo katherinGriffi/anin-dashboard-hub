@@ -29,8 +29,7 @@ const Layout = () => {
                   <Menu className="h-8 w-8" />
                 </SidebarTrigger>
 
-                {/* ✨ TÍTULO DE LA EMPRESA AÑADIDO AQUÍ */}
-                <h1 className="text-xl font-semibold hidden md:block">
+               <h1 className="text-xl font-semibold hidden md:block">
                   DEO
                 </h1>
               </div>
