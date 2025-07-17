@@ -11,9 +11,11 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    
     mode === 'development' &&
     componentTagger(),
   ].filter(Boolean),
+  base: '/anin-dashboard-hub/',
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
