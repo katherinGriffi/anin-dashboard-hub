@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { cn } from "@/lib/utils";
+import logoAnin from '@/anin.png'; 
 import {
   LayoutGrid,
   Compass,
@@ -18,7 +19,9 @@ import {
   HousePlugIcon,
   HousePlus,
   Hospital,
-  HouseIcon
+  HouseIcon,
+  SquareActivityIcon,
+  CuboidIcon
 } from 'lucide-react';
 
 // Interfaz de propiedades que el componente espera recibir
@@ -30,12 +33,12 @@ interface AppSidebarProps {
 
 // Configuración de los elementos del menú de navegación
 const dashboardItems = [
-  { title: 'La Caleta', url: '/dashboard/general', icon: LayoutGrid },
-  { title: 'Actividades', url: '/dashboard/plan-mil', icon: HospitalIcon },
- // { title: 'IREN Norte', url: '/dashboard/iren-norte', icon: HousePlugIcon },
-  //{ title: 'IREN Sur', url: '/dashboard/iren-sur', icon: HousePlus },
-  //{ title: 'La Caleta', url: '/dashboard/la-caleta', icon: Hospital },
-  //{ title: 'Lanatta', url: '/dashboard/lanatta', icon: HouseIcon },
+  { title: 'GESTION DE ACTIVIDADES', url: '/dashboard/general', icon: LayoutGrid },
+  { title: 'PLAN MIL', url: '/dashboard/plan-mil', icon: CuboidIcon },
+   { title: 'LA CALETA', url: '/dashboard/la-caleta', icon: Hospital },
+ { title: 'IREN NORTE', url: '/dashboard/iren-norte', icon: HousePlugIcon },
+  { title: 'IREN SUR', url: '/dashboard/iren-sur', icon: HousePlus },
+   { title: 'LANATTA', url: '/dashboard/lanatta', icon: HouseIcon },
  { title: 'ClickUp', url: '/dashboard/clickup', icon: CheckSquare },
 ];
 
@@ -69,13 +72,14 @@ export function AppSidebar({ isCollapsed, setIsCollapsed, className }: AppSideba
       )}>
         
         {/* ✨ LOGO AÑADIDO AQUÍ ✨ */}
-        {!isCollapsed && (
-          <img 
-            src="/anin.jpg" 
-            alt="Logo ANIN" 
-            className="h-11" // Puedes ajustar la altura (h-8, h-9, h-10)
-          />
-        )}
+       {!isCollapsed && (
+  <img 
+    // 👇 CAMBIA ESTA LÍNEA 👇
+    src={logoAnin} 
+    alt="Logo ANIN" 
+    className="h-14 w-18  mr-9"
+  />
+)}
         
         <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)}>
           {isCollapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
