@@ -40,7 +40,7 @@ const Login = () => {
               <Shield className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <CardTitle className="anin-logo text-3xl">ANIN</CardTitle>
+              <CardTitle className="anin-logo text-3xl">ANIN - DEO</CardTitle>
               <CardDescription className="text-muted-foreground mt-2">
                 Sistema de Gestión de Datos
               </CardDescription>

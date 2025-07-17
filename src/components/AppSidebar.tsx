@@ -30,13 +30,13 @@ interface AppSidebarProps {
 
 // Configuración de los elementos del menú de navegación
 const dashboardItems = [
-  { title: 'Gestión General', url: '/dashboard/general', icon: LayoutGrid },
-  { title: 'Plan Mil', url: '/dashboard/plan-mil', icon: HospitalIcon },
-  { title: 'IREN Norte', url: '/dashboard/iren-norte', icon: HousePlugIcon },
-  { title: 'IREN Sur', url: '/dashboard/iren-sur', icon: HousePlus },
-  { title: 'La Caleta', url: '/dashboard/la-caleta', icon: Hospital },
-  { title: 'Lanatta', url: '/dashboard/lanatta', icon: HouseIcon },
-  { title: 'ClickUp', url: '/dashboard/clickup', icon: CheckSquare },
+  { title: 'La Caleta', url: '/dashboard/general', icon: LayoutGrid },
+  { title: 'Actividades', url: '/dashboard/plan-mil', icon: HospitalIcon },
+ // { title: 'IREN Norte', url: '/dashboard/iren-norte', icon: HousePlugIcon },
+  //{ title: 'IREN Sur', url: '/dashboard/iren-sur', icon: HousePlus },
+  //{ title: 'La Caleta', url: '/dashboard/la-caleta', icon: Hospital },
+  //{ title: 'Lanatta', url: '/dashboard/lanatta', icon: HouseIcon },
+ { title: 'ClickUp', url: '/dashboard/clickup', icon: CheckSquare },
 ];
 
 export function AppSidebar({ isCollapsed, setIsCollapsed, className }: AppSidebarProps) {
