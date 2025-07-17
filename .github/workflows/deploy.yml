@@ -1,52 +1,36 @@
-# Nombre del Workflow para el despliegue en GitHub Pages
+
 name: Deploy Vite Project to GitHub Pages
 
-# Se ejecuta cada vez que haces un 'push' a la rama 'main'
 on:
   push:
     branches: [ "main" ]
 
-# Permisos para que el workflow pueda escribir en el despliegue de GitHub
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Define un solo trabajo (job) llamado 'deploy'
 jobs:
   deploy:
-    runs-on: ubuntu-latest # Se ejecuta en un servidor de Ubuntu
+    runs-on: ubuntu-latest
     steps:
-      # 1. Clona tu repositorio en el servidor
       - name: Checkout
         uses: actions/checkout@v4
-
-      # 2. Configura Node.js para poder usar npm
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20 # Usa la versión 20 de Node.js
+          node-version: 20
           cache: 'npm'
-
-      # 3. Instala todas las dependencias de tu proyecto
       - name: Install dependencies
         run: npm install
-
-      # 4. Construye el proyecto (aquí se ejecuta 'vite build' y se usa tu vite.config.js)
       - name: Build
         run: npm run build
-
-      # 5. Prepara los archivos de la carpeta 'dist' para subirlos
       - name: Setup Pages
         uses: actions/configure-pages@v5
-
-      # 6. Sube los archivos de la carpeta 'dist' como un 'artefacto'
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
-
-      # 7. Despliega el artefacto subido a GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
