@@ -1,37 +1,4 @@
 
-# ANIN - Dashboard de Vanguardia ⚡
-
-![ANIN Logo](https://img.shields.io/badge/ANIN-Dashboard%20de%20Vanguardia-38BDF8?style=for-the-badge&logo=react)
-
-Una aplicación web de **diseño de vanguardia** con React + Vite que implementa **Glassmorphism**, paleta "Neón Nocturno" y un layout híbrido revolucionario para dashboards de monitoreo.
-
-## ✨ Características de Vanguardia
-
-- **🔮 Estética Glassmorphism**: Efectos de cristal esmerilado con backdrop-blur
-- **🌃 Paleta "Neón Nocturno"**: Colores sofisticados (#0D1117, #38BDF8, #E83D84)
-- **🚀 Layout Híbrido**: Header fijo + Sidebar colapsable con micro-interacciones
-- **💫 Animaciones Fluidas**: Transiciones suaves y efectos hover con glow neón
-- **📱 7 Dashboards**: Incluyendo la nueva sección de ClickUp
-- **🎯 Iconografía Moderna**: Lucide Icons de alta calidad
-
-## 🎯 Credenciales de Acceso
-
-```
-Usuario: admin
-Contraseña: Anin.2025*
-```
-
-## 📋 Dashboards Disponibles
-
-| Dashboard | Ruta | Descripción | Icono |
-|-----------|------|-------------|-------|
-| Gestión General | `/dashboard/general` | Vista general de actividades | LayoutGrid |
-| IREN Norte | `/dashboard/iren-norte` | Dashboard IREN Norte | Compass |
-| IREN Sur | `/dashboard/iren-sur` | Dashboard IREN Sur | MapPin |
-| La Caleta | `/dashboard/la-caleta` | Dashboard La Caleta | Anchor |
-| Lanatta | `/dashboard/lanatta` | Dashboard Lanatta | Ship |
-| Plan Mil | `/dashboard/plan-mil` | Dashboard Plan Mil | Zap |
-| **🆕 ClickUp** | `/dashboard/clickup` | **Gestión de proyectos ClickUp** | CheckSquare |
 
 ## 🛠️ Tecnologías
 
