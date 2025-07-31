@@ -7,7 +7,7 @@ const DashboardLaCaleta = () => {
       title="La Caleta"
       description="Dashboard de monitoreo y gestión La Caleta"
       // TODO: Reemplazar con la URL real del dashboard de La Caleta
-      url="https://ejemplo-dashboard-la-caleta.com"
+      url="https://app.powerbi.com/view?r=eyJrIjoiOTdlODI1MDktN2ZjOC00NjcyLWJiNmUtYWQ4MTBlZjkzMzg3IiwidCI6IjkzN2JjYzgyLWZkYmYtNGYwMC1hOWUxLTUyN2U3NWUxMzU1MyIsImMiOjR9"
     />
   );
 };

@@ -7,7 +7,7 @@ const DashboardIrenSur = () => {
       title="IREN Sur"
       description="Dashboard de monitoreo y gestión IREN Sur"
       // TODO: Reemplazar con la URL real del dashboard de IREN Sur
-      url="https://ejemplo-dashboard-iren-sur.com"
+      url="https://app.powerbi.com/view?r=eyJrIjoiMGM2ZTM2ZWEtYzAwYS00MzNhLTgyYzYtMWM0OTA5ODAzYTgxIiwidCI6IjkzN2JjYzgyLWZkYmYtNGYwMC1hOWUxLTUyN2U3NWUxMzU1MyIsImMiOjR9"
     />
   );
 };
