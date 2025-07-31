@@ -3,7 +3,8 @@ import { ExternalLink } from "lucide-react";
 
 const DashboardClickUp = () => {
   // URL para el botón que abre la aplicación completa de ClickUp
-  const clickUpAppUrl = "https://app.clickup.com/90131815064/v/l/2ky4cpmr-173";
+  const clickUpAppUrl = "https://app.clickup.com/90132069240/v/s/90138740453"; 
+
 
   return (
     // Contenedor principal para centrar la tarjeta vertical y horizontalmente
