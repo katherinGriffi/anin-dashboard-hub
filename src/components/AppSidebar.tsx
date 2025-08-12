@@ -34,8 +34,9 @@ interface AppSidebarProps {
 // Configuración de los elementos del menú de navegación
 const dashboardItems = [
   { title: 'GESTION DE ACTIVIDADES', url: '/dashboard/general', icon: LayoutGrid },
+  { title: 'LA CALETA', url: '/dashboard/la-caleta', icon: Hospital },
   { title: 'PLAN MIL', url: '/dashboard/plan-mil', icon: CuboidIcon },
-   { title: 'LA CALETA', url: '/dashboard/la-caleta', icon: Hospital },
+   
  { title: 'IREN NORTE', url: '/dashboard/iren-norte', icon: HousePlugIcon },
   { title: 'IREN SUR', url: '/dashboard/iren-sur', icon: HousePlus },
 //   { title: 'LANATTA', url: '/dashboard/lanatta', icon: HouseIcon },
