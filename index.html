@@ -3,29 +3,62 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <title>ANIN - Sistema de Gestión de Dashboards</title>
     <link rel="icon" href="/favicon.ico" />
     <meta name="description" content="ANIN - Sistema web de gestión de dashboards para monitoreo de actividades" />
     <meta name="author" content="ANIN Development Team" />
 
-    <!-- Open Graph Meta Tags -->
+    <!-- Open Graph -->
     <meta property="og:title" content="ANIN - Sistema de Dashboards" />
     <meta property="og:description" content="Sistema web de gestión de dashboards para monitoreo de actividades" />
     <meta property="og:type" content="website" />
-    
-    <!-- Configuración PWA -->
+
+    <!-- PWA -->
     <meta name="theme-color" content="#007BFF" />
+    <!-- Recomendado por Chrome -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <!-- (Opcional) Mantener para iOS antiguo -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    
-    <!-- Preload de fuentes -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- (Opcional) Manifest si usas PWA -->
+    <!-- <link rel="manifest" href="/manifest.webmanifest" /> -->
+
+    <!-- Rendimiento: preconexiones -->
+    <link rel="preconnect" href="https://accounts.google.com" />
+    <link rel="preconnect" href="https://apis.google.com" />
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- (Opcional en desarrollo) CSP amigable con Vite HMR y Google.
+         Si usas CSP del servidor, configura ahí; en dev puedes omitir esta meta para evitar problemas. -->
+    <!--
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://apis.google.com https://www.gstatic.com;
+      connect-src 'self' ws: wss: https://www.googleapis.com https://accounts.google.com https://apis.google.com https://www.gstatic.com;
+      img-src 'self' data: https:;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      frame-src https://accounts.google.com;
+    ">
+    -->
   </head>
 
   <body>
     <div id="root"></div>
+
+    <!-- Google Identity Services (OAuth 2.0 moderno) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- Google API Client (para Sheets v4) -->
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+
+    <!-- Tu app -->
     <script type="module" src="/src/main.tsx"></script>
+
+    <noscript>Necesitas habilitar JavaScript para ejecutar esta aplicación.</noscript>
   </body>
 </html>

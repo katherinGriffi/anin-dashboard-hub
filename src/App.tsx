@@ -14,6 +14,14 @@ import DashboardLaCaleta from './pages/DashboardLaCaleta';
 import DashboardLanatta from './pages/DashboardLanatta';
 import DashboardPlanMil from './pages/DashboardPlanMil';
 import DashboardClickUp from './pages/DashboardClickUp';
+import DashboardDrenajePiura from "./pages/DashboardDrenajePiura";
+import DashboardSeguimientoSGD from "./pages/DashboardSeguimientoSGD";
+import { Sidebar } from "lucide-react";
+
+import { useLocation } from 'react-router-dom'; // O el hook de tu librería de rutas
+
+
+
 
 const queryClient = new QueryClient();
 
@@ -44,6 +52,8 @@ const AppRoutes = () => {
         <Route path="/dashboard/lanatta" element={<DashboardLanatta />} />
         <Route path="/dashboard/plan-mil" element={<DashboardPlanMil />} />
         <Route path="/dashboard/clickup" element={<DashboardClickUp />} />
+        <Route path="/dashboard/drenaje-piura" element={<DashboardDrenajePiura/>} />
+        <Route path="/dashboard/gestionsgd" element={<DashboardSeguimientoSGD />} />
         
         <Route path="/dashboard" element={<Navigate to="/dashboard/general" replace />} />
       </Route>
