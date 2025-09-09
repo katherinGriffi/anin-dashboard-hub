@@ -1,8 +1,3 @@
-// ===================================================================================
-// ARCHIVO: src/pages/GestionOS.tsx (Versión Final y Completa)
-// DESCRIPCIÓN: Diseño limpio con fondo blanco y navegación superior.
-// ===================================================================================
-
 // --- IMPORTACIONES ---
 import React, { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";

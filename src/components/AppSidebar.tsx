@@ -17,8 +17,8 @@ import {
   CuboidIcon,
   GlassWaterIcon,
   PenToolIcon,
-  Ship,FileArchive,FileBadge,
-  ChevronDown //
+  Ship,FileArchive,FileBadge, FileBox, Construction, ChevronDown, BarChart2Icon, LucideHospital,
+  LucideFileArchive
   
 } from 'lucide-react';
 
@@ -36,22 +36,35 @@ const menuItems = [
     title: 'GESTIÓN',
     icon: LayoutGrid,
     subItems: [
-    //  { title: 'GESTIÓN OS', url: '/dashboard/gestion-os', icon: LayoutGrid },
+  
       { title: 'GESTIÓN SGD', url: '/dashboard/gestionsgd', icon: PenToolIcon },
+       { title: 'GESTION OS', url: '/dashboard/gestionos', icon:  FileBox},
     ]
   },
   {
-    title: 'PROYECTOS',
-    icon: FileArchive,
+    title: 'PROYECTOS SALUD',
+    icon: LucideHospital,
     subItems: [
-      { title: 'GESTION DE ACTIVIDADES', url: '/dashboard/general', icon: FileBadge },
+      { title: 'SEGUIMIENTO DE ACTIVIDADES', url: '/dashboard/general', icon: BarChart2Icon },
       { title: 'LA CALETA', url: '/dashboard/la-caleta', icon: Hospital },
       { title: 'PLAN MIL', url: '/dashboard/plan-mil', icon: CuboidIcon },
       { title: 'IREN NORTE', url: '/dashboard/iren-norte', icon: HousePlugIcon },
       { title: 'IREN SUR', url: '/dashboard/iren-sur', icon: HousePlus },
+     
      // { title: 'DRENAJE PIURA', url: '/dashboard/drenaje_piura', icon: GlassWaterIcon },
     ]
   },
+ {
+    title: 'PROYECTOS SI',
+    icon: Construction,
+    subItems: [
+      //{ title: 'SEGUIMIENTO DE ACTIVIDADES', url: '/dashboard/general', icon: BarChart2Icon },
+      //{ title: 'LA CALETA', url: '/dashboard/la-caleta', icon: Hospital },
+       
+     { title: 'DRENAJE PIURA', url: '/dashboard/drenajepiura', icon: GlassWaterIcon },
+    ]
+  },
+
   { 
     title: 'ClickUp', 
     url: '/dashboard/clickup', 

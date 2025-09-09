@@ -11,6 +11,11 @@
     /* Fondo Principal - Noche Profunda */
     --background: 215 27% 7%;  /* #0D1117 */
     --foreground: 220 14% 83%; /* #C9D1D9 - Nebulosa */
+     --success: 142.1 76.2% 36.3%;
+    --success-foreground: 142.1 76.2% 96.3%;
+   
+    --warning: 47.9 95.8% 53.1%;
+    --warning-foreground: 47.9 95.8% 3.1%;
 
     /* Contenedores - Abismo Suave */
     --card: 215 15% 12%;       /* #161B22 */
