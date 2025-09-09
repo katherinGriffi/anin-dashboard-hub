@@ -22,8 +22,12 @@ declare global {
 }
 
 // --- VARIABLES DE ENTORNO ---
-const SPREADSHEET_ID = import.meta.env.VITE_SPREADSHEET_ID;
-const CLIENT_ID = import.meta.env.VITE_CLIENT_ID;
+//const SPREADSHEET_ID = import.meta.env.VITE_SPREADSHEET_ID;
+//const CLIENT_ID = import.meta.env.VITE_CLIENT_ID;
+
+const SPREADSHEET_ID = "1VnyQuW6rrY79olwk8Rn5f0RDSAv75wAG6zggi4W0Cq8";
+const CLIENT_ID = "702997675287-0e46pnta7gjrdgr3jmjrcpdd2j94d0k8.apps.googleusercontent.com"
+
 const API_KEY = import.meta.env.VITE_API_KEY;
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
 
@@ -213,7 +217,7 @@ const handleEditarPersona = (personaEditada) => ejecutarOperacion(
   async () => {
     if (!personaEditada.rowIndex) throw new Error("Persona sin rowIndex.");
 
-    const values = [[personaEditada.id, personaEditada.nombre, personaEditada.apellido, personaEditada.email, personaEditada.activo, personaEditada.rol, personaEditada.nro_celular, personaEditada.valor]];
+    const values = [[personaEditada.id, personaEditada.nombre, personaEditada.apellido, personaEditada.email,  personaEditada.nro_celular,personaEditada.activo, personaEditada.rol, personaEditada.valor]];
     await window.gapi.client.sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: `Personas!A${personaEditada.rowIndex}:H${personaEditada.rowIndex}`, // Asegúrate que el rango cubra hasta la H
