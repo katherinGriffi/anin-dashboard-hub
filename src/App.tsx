@@ -72,7 +72,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
-        {/* 👇 AQUÍ ESTÁ EL ÚNICO CAMBIO REALIZADO 👇 */}
+
         <BrowserRouter basename="/anin-dashboard-hub">
           <AppRoutes />
         </BrowserRouter>
