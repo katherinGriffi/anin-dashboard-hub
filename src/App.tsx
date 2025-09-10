@@ -20,6 +20,7 @@ import GestionOS from "./pages/GestionOS";
 import { Sidebar } from "lucide-react";
 
 import { useLocation } from 'react-router-dom'; // O el hook de tu librería de rutas
+import DashboardCheca from "./pages/DashboardCheca";
 
 
 
@@ -57,7 +58,7 @@ const AppRoutes = () => {
         <Route path="/dashboard/drenajepiura" element={<DashboardDrenajePiura/>} />
         <Route path="/dashboard/gestionsgd" element={<DashboardSeguimientoSGD />} />
         <Route path="/dashboard/gestionOS" element={<GestionOS />} />
-        
+         <Route path="/dashboard/checa" element={<DashboardCheca />} />        
         <Route path="/dashboard" element={<Navigate to="/dashboard/general" replace />} />
       </Route>
 

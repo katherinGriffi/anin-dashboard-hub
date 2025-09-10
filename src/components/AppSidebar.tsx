@@ -17,10 +17,12 @@ import {
   CuboidIcon,
   GlassWaterIcon,
   PenToolIcon,
-  Ship,FileArchive,FileBadge, FileBox, Construction, ChevronDown, BarChart2Icon, LucideHospital,
-  LucideFileArchive
+  Ship,FileArchive,FileBadge, FileBox, Construction, ChevronDown, BarChart2Icon, LucideHospital,LineChartIcon,
+  LucideFileArchive,
+  CircuitBoard
   
 } from 'lucide-react';
+import { table } from 'console';
 
 // Interfaz de propiedades
 interface AppSidebarProps {
@@ -62,6 +64,17 @@ const menuItems = [
       //{ title: 'LA CALETA', url: '/dashboard/la-caleta', icon: Hospital },
        
      { title: 'DRENAJE PIURA', url: '/dashboard/drenajepiura', icon: GlassWaterIcon },
+    ]
+  },
+
+  {
+    title: 'PROYECTOS LINEALES',
+    icon: LineChartIcon,
+    subItems: [
+      //{ title: 'SEGUIMIENTO DE ACTIVIDADES', url: '/dashboard/general', icon: BarChart2Icon },
+      //{ title: 'LA CALETA', url: '/dashboard/la-caleta', icon: Hospital },
+       
+     { title: 'CANAL MIGUEL CHECA', url: '/dashboard/checa', icon: CircuitBoard },
     ]
   },
 
