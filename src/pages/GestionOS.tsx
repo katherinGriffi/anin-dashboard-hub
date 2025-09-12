@@ -1,17 +1,18 @@
 // --- IMPORTACIONES ---
 import React, { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toaster, toast } from "sonner";
-import { LayoutDashboard, Users, FolderKanban, FileText, LogOut, LogIn } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, FileText, LogOut, LogIn, LucidePersonStanding } from "lucide-react";
 
 // --- IMPORTACIONES DE TUS COMPONENTES DE PESTAÑAS ---
 import { DashboardTab } from '@/components/DashboardTab';
 import { ProyectosTab } from '@/components/ProyectosTab';
 import { PersonasTab } from '@/components/PersonasTab';
 import { GestionOSTab } from '@/components/GestionOSTab';
+import { RolesManager } from '@/components/RolesManager';
 
 // --- DECLARACIONES GLOBALES ---
 declare global {
@@ -22,12 +23,8 @@ declare global {
 }
 
 // --- VARIABLES DE ENTORNO ---
-//const SPREADSHEET_ID = import.meta.env.VITE_SPREADSHEET_ID;
-//const CLIENT_ID = import.meta.env.VITE_CLIENT_ID;
-
 const SPREADSHEET_ID = "1VnyQuW6rrY79olwk8Rn5f0RDSAv75wAG6zggi4W0Cq8";
-const CLIENT_ID = "702997675287-0e46pnta7gjrdgr3jmjrcpdd2j94d0k8.apps.googleusercontent.com"
-
+const CLIENT_ID = "702997675287-0e46pnta7gjrdgr3jmjrcpdd2j94d0k8.apps.googleusercontent.com";
 const API_KEY = import.meta.env.VITE_API_KEY;
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
 
@@ -42,10 +39,13 @@ export default function GestionOS() {
   const [proyectos, setProyectos] = useState<any[]>([]);
   const [personas, setPersonas] = useState<any[]>([]);
   const [osList, setOsList] = useState<any[]>([]);
-  const [roles, setRoles] = useState<any[]>([]); 
+  const [roles, setRoles] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [proyectosSheetId, setProyectosSheetId] = useState<number | null>(null);
-  const [personasSheetId, setPersonasSheetId] = useState<number | null>(null)
+  const [personasSheetId, setPersonasSheetId] = useState<number | null>(null);
+  const [rolesSheetId, setRolesSheetId] = useState<number | null>(null);
+  const [osSheetId, setOsSheetId] = useState<number | null>(null); // <-- AÑADE ESTA LÍNEA
+
 
   // --- LÓGICA DE AUTENTICACIÓN Y DATOS ---
   const handleLogout = useCallback((showToast = true) => {
@@ -54,7 +54,7 @@ export default function GestionOS() {
       window.google.accounts.oauth2.revoke(token.access_token, () => {
         window.gapi.client.setToken(null);
         setIsLoggedIn(false);
-        setProyectos([]); setPersonas([]); setOsList([]); setRoles([]); // ✅ LIMPIAR ROLES
+        setProyectos([]); setPersonas([]); setOsList([]); setRoles([]);
         if (showToast) toast.info("Has cerrado sesión.");
       });
     } else {
@@ -69,48 +69,65 @@ export default function GestionOS() {
     }
     setLoading(true);
     try {
-      // ✅ SOLUCIÓN ELIMINAR: 1. Obtenemos los metadatos del spreadsheet
       const metaDataResponse = await window.gapi.client.sheets.spreadsheets.get({
         spreadsheetId: SPREADSHEET_ID,
       });
       const sheets = metaDataResponse.result.sheets;
 
-      // Buscamos la pestaña "Proyectos" y "Personas" por su nombre y guardamos su ID real
       const proyectosSheet = sheets.find(s => s.properties.title === "Proyectos");
       const personasSheet = sheets.find(s => s.properties.title === "Personas");
+      const rolesSheet = sheets.find(s => s.properties.title === "Roles");
+      const osSheet = sheets.find(s => s.properties.title === "OS"); 
 
-      if (!proyectosSheet || !personasSheet) {
-        toast.error("Error: No se encontraron las pestañas 'Proyectos' o 'Personas'.");
+
+      if (!proyectosSheet || !personasSheet || !rolesSheet || !osSheet) {
+        toast.error("Error: No se encontraron las pestañas 'Proyectos', 'Personas' o 'Roles'.");
         setLoading(false);
         return;
       }
       setProyectosSheetId(proyectosSheet.properties.sheetId);
       setPersonasSheetId(personasSheet.properties.sheetId);
+      setRolesSheetId(rolesSheet.properties.sheetId);
+      setOsSheetId(osSheet.properties.sheetId); 
 
-      // 2. Ahora sí, cargamos los valores de las celdas
-      const ranges = ["Proyectos!A2:F", "Personas!A2:H", "OS!A2:K", "Roles!A2:A"];
+      const ranges = ["Proyectos!A2:F", "Personas!A2:H", "OS!A2:M", "Roles!A2:A"];
       const response = await window.gapi.client.sheets.spreadsheets.values.batchGet({ spreadsheetId: SPREADSHEET_ID, ranges });
       const [proyectosData, personasData, osData, rolesData] = response.result.valueRanges.map((r) => r.values || []);
 
       setProyectos(proyectosData.map((row, index) => ({ id: parseInt(row[0]), nombre: row[1], activo: row[2] === "TRUE", inicio: row[3], fin: row[4], descripcion: row[5], rowIndex: index + 2 })));
-      setPersonas(personasData.map((row, index) => ({ id: parseInt(row[0]), nombre: row[1], apellido: row[2], email: row[3], activo: row[4] === "TRUE", rol: row[5], nro_celular: row[6] || "", valor: row[7] || "", rowIndex: index + 2 })));
-setOsList(osData.map((row) => ({ 
-    id: row[0], 
-    personaId: parseInt(row[1]), 
-    proyectoId: parseInt(row[2]), 
-    tipoContrato: row[3], 
-    duracion: parseInt(row[4]), 
-    fechaNotificacion: row[5], 
-    fechaFin: row[6], 
-    primerEntregable: row[7], 
-    segundoEntregable: row[8], 
-    tercerEntregable: row[9], 
-    activa: row[10] === "TRUE",
-    areaCargo: row[11], // Nuevo
-    condicion: row[12]  // Nuevo
-})));
+     setPersonas(personasData.map((row, index) => ({ 
+        id: parseInt(row[0]),   // Columna A: ID
+        nombre: row[1],           // Columna B: Nombre
+        apellido: row[2],         // Columna C: Apellido
+        email: row[3],            // Columna D: Email
+        nro_celular: row[4] || "",// Columna E: Nro. Celular
+        activo: row[5] === "TRUE",// Columna F: Activo
+        rol: row[6],              // Columna G: Rol
+        valor: row[7] || "",      // Columna H: Valor
+        rowIndex: index + 2 
+      })));
+
+      setOsList(osData
+    .filter(row => row && row[0]) // <-- AÑADE ESTO para ignorar filas donde el ID (columna A) está vacío
+    .map((row, index) => ({
+        id: row[0],
+        personaId: parseInt(row[1]),
+        proyectoId: parseInt(row[2]),
+        tipoContrato: row[3],
+        duracion: parseInt(row[4]),
+        fechaNotificacion: row[5],
+        fechaFin: row[6],
+        primerEntregable: row[7],
+        segundoEntregable: row[8],
+        tercerEntregable: row[9],
+        activa: row[10] === "TRUE",
+        areaCargo: row[11],
+        condicion: row[12],
+        rowIndex: index + 2
+    }))
+);
       const rolesValidos = rolesData.filter(row => row && row[0] && row[0].trim() !== "");
-      setRoles(rolesValidos.map(row => ({ nombre: row[0] })));
+      setRoles(rolesValidos.map((row, index) => ({ nombre: row[0], rowIndex: index + 2 })));
 
     } catch (err) {
       console.error("Error cargando datos:", err);
@@ -186,7 +203,7 @@ setOsList(osData.map((row) => ({
       await cargarDatos();
     } catch (error) {
       console.error(errorMessage, error);
-      toast.error(errorMessage);
+      toast.error(`${errorMessage}: ${error.message || 'Error desconocido.'}`);
     }
   };
 
@@ -194,120 +211,141 @@ setOsList(osData.map((row) => ({
   // Proyectos
   const registrarProyecto = (data) => ejecutarOperacion(async () => { const id = proyectos.length > 0 ? Math.max(...proyectos.map(p => p.id)) + 1 : 1; const values = [[id, data.nombre, data.activo, data.inicio, data.fin, data.descripcion]]; await window.gapi.client.sheets.spreadsheets.values.append({ spreadsheetId: SPREADSHEET_ID, range: "Proyectos!A:F", valueInputOption: "USER_ENTERED", insertDataOption: "INSERT_ROWS", resource: { values } }); }, { successMessage: "Proyecto registrado.", errorMessage: "Error al registrar proyecto." });
   const handleEditarProyecto = (proyectoEditado) => ejecutarOperacion(async () => { if (!proyectoEditado.rowIndex) throw new Error("Proyecto sin rowIndex, no se puede editar."); const values = [[proyectoEditado.id, proyectoEditado.nombre, proyectoEditado.activo, proyectoEditado.inicio, proyectoEditado.fin, proyectoEditado.descripcion]]; await window.gapi.client.sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Proyectos!A${proyectoEditado.rowIndex}:F${proyectoEditado.rowIndex}`, valueInputOption: "USER_ENTERED", resource: { values } }); }, { successMessage: "Proyecto actualizado.", errorMessage: "Error al actualizar proyecto." });
-  const handleEliminarProyecto = (proyectoAEliminar: any) => ejecutarOperacion(async () => { if (!proyectoAEliminar.rowIndex) throw new Error("Proyecto sin rowIndex, no se puede eliminar."); if (proyectos.length === 1) { await window.gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: SPREADSHEET_ID, range: `Proyectos!A${proyectoAEliminar.rowIndex}:F${proyectoAEliminar.rowIndex}` }); } else { const sheetId = 0; await window.gapi.client.sheets.spreadsheets.batchUpdate({ spreadsheetId: SPREADSHEET_ID, resource: { requests: [{ deleteDimension: { range: { sheetId, dimension: "ROWS", startIndex: proyectoAEliminar.rowIndex - 1, endIndex: proyectoAEliminar.rowIndex } } }] } }); } }, { successMessage: "Proyecto eliminado.", errorMessage: "Error al eliminar proyecto." });
+  const handleEliminarProyecto = (proyectoAEliminar: any) => ejecutarOperacion(async () => { if (!proyectoAEliminar.rowIndex) throw new Error("Proyecto sin rowIndex, no se puede eliminar."); if (proyectosSheetId === null) throw new Error("ID de la hoja 'Proyectos' no encontrado."); if (proyectos.length === 1) { await window.gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: SPREADSHEET_ID, range: `Proyectos!A${proyectoAEliminar.rowIndex}:F${proyectoAEliminar.rowIndex}` }); } else { await window.gapi.client.sheets.spreadsheets.batchUpdate({ spreadsheetId: SPREADSHEET_ID, resource: { requests: [{ deleteDimension: { range: { sheetId: proyectosSheetId, dimension: "ROWS", startIndex: proyectoAEliminar.rowIndex - 1, endIndex: proyectoAEliminar.rowIndex } } }] } }); } }, { successMessage: "Proyecto eliminado.", errorMessage: "Error al eliminar proyecto." });
 
   // Personas
-  // ✅ ACTUALIZADO para escribir los 8 campos (A:H)
-const registrarPersona = (data) => ejecutarOperacion(
-  async () => {
-    const id = personas.length > 0 ? Math.max(...personas.map(p => p.id)) + 1 : 1;
-    // ✅ ORDEN CORREGIDO: Se intercambió data.rol y data.activo para que coincidan con las columnas de la hoja.
-    const values = [[id, data.nombre, data.apellido, data.email,data.nro_celular, data.activo, data.rol, data.valor]];
-    await window.gapi.client.sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
-      range: "Personas!A:H", // Asegúrate que el rango cubra hasta la columna H
-      valueInputOption: "USER_ENTERED",
-      insertDataOption: "INSERT_ROWS",
-      resource: { values }
-    });
-  },
-  { successMessage: "Persona registrada.", errorMessage: "Error al registrar persona." }
-);
-const handleEditarPersona = (personaEditada) => ejecutarOperacion(
-  async () => {
-    if (!personaEditada.rowIndex) throw new Error("Persona sin rowIndex.");
-
-    const values = [[personaEditada.id, personaEditada.nombre, personaEditada.apellido, personaEditada.email,  personaEditada.nro_celular,personaEditada.activo, personaEditada.rol, personaEditada.valor]];
-    await window.gapi.client.sheets.spreadsheets.values.update({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `Personas!A${personaEditada.rowIndex}:H${personaEditada.rowIndex}`, // Asegúrate que el rango cubra hasta la H
-      valueInputOption: "USER_ENTERED",
-      resource: { values }
-    });
-  },
-  { successMessage: "Persona actualizada.", errorMessage: "Error al actualizar persona." }
-);
-
-const handleEliminarPersona = (personaAEliminar: any) => ejecutarOperacion(
-    async () => {
-      if (!personaAEliminar.rowIndex) throw new Error("Persona sin rowIndex.");
-      if (personas.length === 1) {
-        await window.gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: SPREADSHEET_ID, range: `Personas!A${personaAEliminar.rowIndex}:H${personaAEliminar.rowIndex}` });
-      } else {
-        // ✅ SOLUCIÓN ELIMINAR: 3. Usamos el ID real guardado en el estado
-        if (personasSheetId === null) throw new Error("ID de la hoja 'Personas' no encontrado.");
-        await window.gapi.client.sheets.spreadsheets.batchUpdate({
-          spreadsheetId: SPREADSHEET_ID,
-          resource: { requests: [{ deleteDimension: { range: { sheetId: personasSheetId, dimension: "ROWS", startIndex: personaAEliminar.rowIndex - 1, endIndex: personaAEliminar.rowIndex } } }] }
-        });
-      }
-    },
-    { successMessage: "Persona eliminada.", errorMessage: "Error al eliminar persona." }
-  );
-
+  
+  const registrarPersona = (data) => ejecutarOperacion(async () => { const id = personas.length > 0 ? Math.max(...personas.map(p => p.id)) + 1 : 1; const values = [[id, data.nombre, data.apellido, data.email, data.nro_celular, data.activo, data.rol, data.valor]]; await window.gapi.client.sheets.spreadsheets.values.append({ spreadsheetId: SPREADSHEET_ID, range: "Personas!A:H", valueInputOption: "USER_ENTERED", insertDataOption: "INSERT_ROWS", resource: { values } }); }, { successMessage: "Persona registrada.", errorMessage: "Error al registrar persona." });
+  const handleEditarPersona = (personaEditada) => ejecutarOperacion(async () => { if (!personaEditada.rowIndex) throw new Error("Persona sin rowIndex."); const values = [[personaEditada.id, personaEditada.nombre, personaEditada.apellido, personaEditada.email, personaEditada.nro_celular, personaEditada.activo, personaEditada.rol, personaEditada.valor]]; await window.gapi.client.sheets.spreadsheets.values.update({ spreadsheetId: SPREADSHEET_ID, range: `Personas!A${personaEditada.rowIndex}:H${personaEditada.rowIndex}`, valueInputOption: "USER_ENTERED", resource: { values } }); }, { successMessage: "Persona actualizada.", errorMessage: "Error al actualizar persona." });
+  const handleEliminarPersona = (personaAEliminar: any) => ejecutarOperacion(async () => { if (!personaAEliminar.rowIndex) throw new Error("Persona sin rowIndex."); if (personasSheetId === null) throw new Error("ID de la hoja 'Personas' no encontrado."); if (personas.length === 1) { await window.gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: SPREADSHEET_ID, range: `Personas!A${personaAEliminar.rowIndex}:H${personaAEliminar.rowIndex}` }); } else { await window.gapi.client.sheets.spreadsheets.batchUpdate({ spreadsheetId: SPREADSHEET_ID, resource: { requests: [{ deleteDimension: { range: { sheetId: personasSheetId, dimension: "ROWS", startIndex: personaAEliminar.rowIndex - 1, endIndex: personaAEliminar.rowIndex } } }] } }); } }, { successMessage: "Persona eliminada.", errorMessage: "Error al eliminar persona." });
 
   // Órdenes de Servicio
-  const registrarOS = (data) => ejecutarOperacion(
-  async () => {
-    let finalId = data.id;
-    if (!finalId) {
-      const nextIdNumber = osList.length > 0 ? Math.max(...osList.map(os => parseInt(os.id.split('-')[1], 10) || 0)) + 1 : 1;
-      finalId = `OS-${String(nextIdNumber).padStart(3, '0')}`;
+  const registrarOS = (data) => ejecutarOperacion(async () => { let finalId = data.id; if (!finalId) { const nextIdNumber = osList.length > 0 ? Math.max(...osList.map(os => parseInt(os.id.split('-')[1], 10) || 0)) + 1 : 1; finalId = `OS-${String(nextIdNumber).padStart(3, '0')}`; } const condicionFinal = data.condicion === 'Otros' ? data.condicionOtros : data.condicion; const values = [[finalId, data.personaId, data.proyectoId, data.tipoContrato, data.duracion, data.fechaInicio, data.fechaFin, data.primerEntregable, data.segundoEntregable, data.tercerEntregable, true, data.areaCargo, condicionFinal]]; await window.gapi.client.sheets.spreadsheets.values.append({ spreadsheetId: SPREADSHEET_ID, range: "OS!A:M", valueInputOption: "USER_ENTERED", insertDataOption: "INSERT_ROWS", resource: { values } }); }, { successMessage: "Orden de Servicio registrada.", errorMessage: "Error al registrar la OS." });
+// En la sección de Órdenes de Servicio, agrega estas funciones:
+
+
+
+  // Roles
+  const handleAddRole = (newRoleName: string) => ejecutarOperacion(
+    async () => {
+      const values = [[newRoleName]];
+      await window.gapi.client.sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID, range: "Roles!A:A", valueInputOption: "USER_ENTERED", insertDataOption: "INSERT_ROWS", resource: { values }
+      });
+    }, { successMessage: "Rol añadido con éxito.", errorMessage: "Error al añadir el rol." }
+  );
+  const handleUpdateRole = (roleToUpdate: { rowIndex: number, nombre: string }) => ejecutarOperacion(
+    async () => {
+      if (!roleToUpdate.rowIndex) throw new Error("El rol no tiene un rowIndex para actualizar.");
+      const values = [[roleToUpdate.nombre]];
+      await window.gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID, range: `Roles!A${roleToUpdate.rowIndex}`, valueInputOption: "USER_ENTERED", resource: { values }
+      });
+    }, { successMessage: "Rol actualizado con éxito.", errorMessage: "Error al actualizar el rol." }
+  );
+  const handleDeleteRole = (roleToDelete: { rowIndex: number }) => ejecutarOperacion(
+    async () => {
+      if (!roleToDelete.rowIndex) throw new Error("El rol no tiene un rowIndex para eliminar.");
+      if (rolesSheetId === null) throw new Error("ID de la hoja 'Roles' no encontrado.");
+      await window.gapi.client.sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        resource: { requests: [{ deleteDimension: { range: { sheetId: rolesSheetId, dimension: "ROWS", startIndex: roleToDelete.rowIndex - 1, endIndex: roleToDelete.rowIndex } } }] }
+      });
+    }, { successMessage: "Rol eliminado con éxito.", errorMessage: "Error al eliminar el rol." }
+  );
+
+  // --- FUNCIONES PARA ÓRDENES DE SERVICIO ---
+
+// Función para editar OS
+const handleEditarOS = (osEditada) => ejecutarOperacion(async () => { 
+  if (!osEditada.rowIndex) throw new Error("OS sin rowIndex, no se puede editar."); 
+  
+  const condicionFinal = osEditada.condicion === 'Otros' ? osEditada.condicionOtros : osEditada.condicion;
+  
+  const values = [
+    [
+      osEditada.id, 
+      osEditada.personaId, 
+      osEditada.proyectoId, 
+      osEditada.tipoContrato, 
+      osEditada.duracion, 
+      osEditada.fechaInicio, 
+      osEditada.fechaFin, 
+      osEditada.primerEntregable, 
+      osEditada.segundoEntregable, 
+      osEditada.tercerEntregable, 
+      osEditada.activa, 
+      osEditada.areaCargo, 
+      condicionFinal
+    ]
+  ];
+  
+  await window.gapi.client.sheets.spreadsheets.values.update({ 
+    spreadsheetId: SPREADSHEET_ID, 
+    range: `OS!A${osEditada.rowIndex}:M${osEditada.rowIndex}`, 
+    valueInputOption: "USER_ENTERED", 
+    resource: { values } 
+  }); 
+}, { 
+  successMessage: "Orden de Servicio actualizada.", 
+  errorMessage: "Error al actualizar la OS." 
+});
+
+
+// Reemplaza tu función handleEliminarOS existente con esta
+
+const handleEliminarOS = (osId) => ejecutarOperacion(async () => {
+    // 1. Encontrar la OS en el estado para obtener su rowIndex
+    const osAEliminar = osList.find(os => os.id === osId);
+
+    if (!osAEliminar || !osAEliminar.rowIndex) {
+        throw new Error(`No se encontró la OS con ID: ${osId} para eliminar.`);
     }
 
-    // Lógica para guardar la condición correcta (si es "Otros", guarda el texto, si no, guarda la opción)
-    const condicionFinal = data.condicion === 'Otros' ? data.condicionOtros : data.condicion;
-
-    // Array de valores actualizado con los nuevos campos al final
-    const values = [[
-        finalId, 
-        data.personaId, 
-        data.proyectoId, 
-        data.tipoContrato, 
-        data.duracion, 
-        data.fechaInicio, // Asumiendo que esta es la fecha de notificación
-        data.fechaFin, 
-        data.primerEntregable, 
-        data.segundoEntregable, 
-        data.tercerEntregable, 
-        true, // activa
-        data.areaCargo, // Nuevo campo
-        condicionFinal   // Nuevo campo
-    ]];
+    if (osSheetId === null) {
+        throw new Error("ID de la hoja 'OS' no encontrado. No se puede eliminar.");
+    }
     
-    // Rango actualizado para escribir hasta la columna M
-    await window.gapi.client.sheets.spreadsheets.values.append({ 
-        spreadsheetId: SPREADSHEET_ID, 
-        range: "OS!A:M", 
-        valueInputOption: "USER_ENTERED", 
-        insertDataOption: "INSERT_ROWS", 
-        resource: { values } 
+    // 2. Crear la solicitud para eliminar la fila usando su índice
+    const request = {
+        deleteDimension: {
+            range: {
+                sheetId: osSheetId,
+                dimension: "ROWS",
+                startIndex: osAEliminar.rowIndex - 1, // El índice en la API es base 0
+                endIndex: osAEliminar.rowIndex
+            }
+        }
+    };
+    
+    // 3. Ejecutar la operación de batchUpdate
+    await window.gapi.client.sheets.spreadsheets.batchUpdate({
+        spreadsheetId: SPREADSHEET_ID,
+        resource: {
+            requests: [request]
+        }
     });
-  },
-  { successMessage: "Orden de Servicio registrada.", errorMessage: "Error al registrar la OS." }
-);
+
+}, {
+    successMessage: "Orden de Servicio eliminada con éxito.",
+    errorMessage: "Error al eliminar la Orden de Servicio."
+});
+
+
   // --- RENDERIZADO CONDICIONAL ---
   if (!isLoggedIn) {
     return (
-      <div> 
+      <div>
         <Toaster richColors position="top-center" />
-        <div className="min-h-screen bg-secondary">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-screen">
-          <header className="flex items-center h-16 px-4 md:px-8 bg-background border-b shadow-sm flex-shrink-0">
-            {/* ... Header content ... */}
-          <div className="flex h-screen items-center justify-center bg-secondary p-4">
-            <Card className="max-w-md w-full text-center p-8 shadow-lg border">
-              <h1 className="text-2xl font-bold text-foreground mb-2">Sistema de Gestión DEO</h1>
-              <p className="text-muted-foreground mb-6">Inicia sesión con Google para continuar</p>
-            
-              <Button onClick={handleLogin} size="lg" className="w-full" disabled={loading}>
-                <LogIn className="mr-2 h-5 w-5" />
-                {loading ? "Inicializando..." : "Iniciar Sesión con Google"}
-              </Button>
-            </Card>
-          </div>
-            </header>
-          </Tabs>
+        <div className="flex h-screen items-center justify-center bg-secondary p-4">
+          <Card className="max-w-md w-full text-center p-8 shadow-lg border">
+            <h1 className="text-2xl font-bold text-foreground mb-2">Sistema de Gestión DEO</h1>
+            <p className="text-muted-foreground mb-6">Inicia sesión con Google para continuar</p>
+            <Button onClick={handleLogin} size="lg" className="w-full" disabled={loading}>
+              <LogIn className="mr-2 h-5 w-5" />
+              {loading ? "Inicializando..." : "Iniciar Sesión con Google"}
+            </Button>
+          </Card>
         </div>
       </div>
     );
@@ -315,26 +353,27 @@ const handleEliminarPersona = (personaAEliminar: any) => ejecutarOperacion(
 
   if (loading) {
     return (
-        <div className="theme-clean-light">
-          <div className="h-screen bg-background p-4 md:p-8">
-            <header className="h-16 flex items-center border-b mb-8">
-              <Skeleton className="h-8 w-32" />
-              <div className="flex-grow flex justify-center">
-                <Skeleton className="h-10 w-96" />
-              </div>
-              <Skeleton className="h-10 w-32" />
-            </header>
-            <main>
-              <Skeleton className="h-[70vh] w-full rounded-xl" />
-            </main>
-          </div>
+      <div className="theme-clean-light">
+        <div className="h-screen bg-background p-4 md:p-8">
+          <header className="h-16 flex items-center border-b mb-8">
+            <Skeleton className="h-8 w-32" />
+            <div className="flex-grow flex justify-center">
+              <Skeleton className="h-10 w-96" />
+            </div>
+            <Skeleton className="h-10 w-32" />
+          </header>
+          <main>
+            <Skeleton className="h-[70vh] w-full rounded-xl" />
+          </main>
         </div>
+      </div>
     );
   }
 
   const navItems = [
     { value: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { value: "proyectos", label: "Proyectos", icon: FolderKanban },
+    { value: "roles", label: "Roles", icon: LucidePersonStanding },
     { value: "personas", label: "Personas", icon: Users },
     { value: "os", label: "Órdenes de Servicio", icon: FileText },
   ];
@@ -362,7 +401,7 @@ const handleEliminarPersona = (personaAEliminar: any) => ejecutarOperacion(
             </Button>
           </header>
 
-          <main className="w-full">
+          <main className="w-full flex-grow overflow-y-auto">
             <TabsContent value="dashboard">
               <DashboardTab proyectos={proyectos} personas={personas} osList={osList} />
             </TabsContent>
@@ -370,17 +409,37 @@ const handleEliminarPersona = (personaAEliminar: any) => ejecutarOperacion(
               <ProyectosTab proyectos={proyectos} onRegistrarProyecto={registrarProyecto} onEditarProyecto={handleEditarProyecto} onEliminarProyecto={handleEliminarProyecto} />
             </TabsContent>
             <TabsContent value="personas">
-              {/* ✅ SE PASA LA PROP roles AL COMPONENTE */}
-              <PersonasTab 
-                roles={roles} 
-                personas={personas} 
-                onRegistrarPersona={registrarPersona} 
-                onEditarPersona={handleEditarPersona} 
-                onEliminarPersona={handleEliminarPersona} 
+              <PersonasTab
+                roles={roles}
+                personas={personas}
+                onRegistrarPersona={registrarPersona}
+                onEditarPersona={handleEditarPersona}
+                onEliminarPersona={handleEliminarPersona}
               />
             </TabsContent>
             <TabsContent value="os">
-              <GestionOSTab osList={osList} personas={personas} proyectos={proyectos} onRegistrarOS={registrarOS} />
+  <GestionOSTab 
+    osList={osList} 
+    personas={personas} 
+    proyectos={proyectos} 
+    onRegistrarOS={registrarOS}
+    onEditarOS={handleEditarOS}        
+    onEliminarOS={handleEliminarOS}    
+  />
+</TabsContent>
+            <TabsContent value="roles" className="p-4 md:p-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Gestión de Roles</CardTitle>
+                  <CardDescription>Añade, edita o elimina los roles disponibles en el sistema.</CardDescription>
+                </CardHeader>
+                <RolesManager
+                  roles={roles}
+                  onAddRole={handleAddRole}
+                  onUpdateRole={handleUpdateRole}
+                  onDeleteRole={handleDeleteRole}
+                />
+              </Card>
             </TabsContent>
           </main>
         </Tabs>

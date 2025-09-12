@@ -358,14 +358,15 @@ export function DashboardTab({ proyectos = [], personas = [], osList = [] }) {
             </Card>
 
             {/* KPI Cards */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
                 <KpiCard title="OS Vigentes" value={dashboardData.osVigentes} description="Órdenes activas" icon={FileText} colorClass="text-primary"/>
                 <KpiCard title="Personas" value={dashboardData.personasAlocadas} description="Personal alocado" icon={Users} colorClass="text-accent"/>
                 <KpiCard title="OS por Vencer" value={dashboardData.osPorVencer15diasCount} description="Próximos 15 días" icon={Clock} colorClass="text-warning"/>
                 <KpiCard title="Entregables" value={dashboardData.entregablesPorVencer7dias} description="Próximos 7 días" icon={Package} colorClass="text-destructive"/>
-                <KpiCard title="Promedio OS" value={dashboardData.promedioContractosPorPersona} description="OS por persona" icon={Target} colorClass="text-success"/>
-                <KpiCard title="Eficiencia" value={`${dashboardData.tasaEficiencia}%`} description="Entregables a tiempo" icon={Activity} colorClass="text-chart-1"/>
-            </div>
+               {/* <KpiCard title="Promedio OS" value={dashboardData.promedioContractosPorPersona} description="OS por persona" icon={Target} colorClass="text-success"/>
+    <KpiCard title="Eficiencia" value={`${dashboardData.tasaEficiencia}%`} description="Entregables a tiempo" icon={Activity} colorClass="text-chart-1"/> 
+    */}
+                 </div>
 
             {/* Chart Section 1 */}
             <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2">
