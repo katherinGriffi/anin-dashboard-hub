@@ -376,7 +376,7 @@ const handleEliminarOS = (osAEliminar) => ejecutarOperacion(async () => {
         <Toaster richColors position="top-center" />
         <div className="flex h-screen items-center justify-center bg-secondary p-4">
           <Card className="max-w-md w-full text-center p-8 shadow-lg border">
-            <h1 className="text-2xl font-bold text-foreground mb-2">Sistema de Gestión DEO</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Sistema de Gestión OS - SALUD</h1>
             <p className="text-muted-foreground mb-6">Inicia sesión con Google para continuar</p>
             <Button onClick={handleLogin} size="lg" className="w-full" disabled={loading}>
               <LogIn className="mr-2 h-5 w-5" />

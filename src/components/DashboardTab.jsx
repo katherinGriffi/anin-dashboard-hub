@@ -310,19 +310,35 @@ export function DashboardTab({ proyectos = [], personas = [], osList = [] }) {
       };
     }).reverse();
     
-    let cumulativeCounts = projectKeys.reduce((acc, key) => ({ ...acc, [key]: 0 }), {});
-    const osAcumuladasPorProyectoData = meses.map(mes => {
-      const nuevosOS = osFiltradas.filter(os => {
-        const inicioOS = new Date(os.fechaNotificacion);
-        return inicioOS.getFullYear() === mes.inicio.getFullYear() && inicioOS.getMonth() === mes.inicio.getMonth();
+    // CORRECCIÓN: Implementación correcta para osAcumuladasPorProyectoData
+    const osAcumuladasPorProyectoData = meses.map((mes, mesIndex) => {
+      const monthData = { name: mes.nombre };
+      
+      // Initialize cumulative counts for each project
+      projectKeys.forEach(proyectoNombre => {
+        monthData[proyectoNombre] = 0;
       });
-      nuevosOS.forEach(os => {
-        const proyectoNombre = proyectosMap.get(os.proyectoId)?.nombre;
-        if (proyectoNombre && cumulativeCounts[proyectoNombre] !== undefined) {
-          cumulativeCounts[proyectoNombre]++;
-        }
-      });
-      return { name: mes.nombre, ...cumulativeCounts };
+      
+      // Calculate cumulative counts up to this month
+      for (let i = 0; i <= mesIndex; i++) {
+        const currentMes = meses[i];
+        
+        const nuevosContratos = osFiltradas.filter(os => {
+          const inicioOS = new Date(os.fechaNotificacion);
+          return inicioOS.getFullYear() === currentMes.inicio.getFullYear() && 
+                 inicioOS.getMonth() === currentMes.inicio.getMonth();
+        });
+        
+        // Add to cumulative counts for each project
+        nuevosContratos.forEach(os => {
+          const proyectoNombre = proyectosMap.get(os.proyectoId)?.nombre;
+          if (proyectoNombre && projectKeys.includes(proyectoNombre)) {
+            monthData[proyectoNombre]++;
+          }
+        });
+      }
+      
+      return monthData;
     });
 
     // Calculation for the cost evolution chart
@@ -436,7 +452,7 @@ export function DashboardTab({ proyectos = [], personas = [], osList = [] }) {
       proximosVencimientosTabla,
       osPorVencerTabla,
       todosLosEntregables,
-      personalPorProyectoData // Add the new data
+      personalPorProyectoData
     };
   }, [proyectos, personas, osList, filtroProyecto, filtroPersona, proyectosMap, personasMap]);
 
@@ -549,233 +565,140 @@ export function DashboardTab({ proyectos = [], personas = [], osList = [] }) {
       {/* Tables Section */}
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
         <DataTableCard 
-  title="Próximos Vencimientos de Entregables (≤ 15 días)"
-  icon={Package}
-  colorClass="text-destructive"
-  data={dashboardData.todosLosEntregables
-    .filter(item => 
-      item.diasRestantes !== null && item.diasRestantes >= 0 && item.diasRestantes <= 15
-    )
-    .sort((a, b) => a.diasRestantes - b.diasRestantes)
-  }
-  columns={vencimientosColumns}
-  renderRow={(item, index) => {
-    let badgeVariant = "secondary";
-    if (item.diasRestantes < 5) {
-      badgeVariant = "destructive";
-    } else if (item.diasRestantes <= 15) {
-      badgeVariant = "warning";
-    }
+          title="Próximos Vencimientos de Entregables (≤ 15 días)"
+          icon={Package}
+          colorClass="text-destructive"
+          data={dashboardData.todosLosEntregables
+            .filter(item => 
+              item.diasRestantes !== null && item.diasRestantes >= 0 && item.diasRestantes <= 15
+            )
+            .sort((a, b) => a.diasRestantes - b.diasRestantes)
+          }
+          columns={vencimientosColumns}
+          renderRow={(item, index) => {
+            let badgeVariant = "secondary";
+            if (item.diasRestantes < 5) {
+              badgeVariant = "destructive";
+            } else if (item.diasRestantes <= 15) {
+              badgeVariant = "warning";
+            }
 
-    const persona = personasMap.get(item.personaId);
-    const personaNombre = persona ? `${persona.nombre} ${persona.apellido}` : 'N/A';
+            const persona = personasMap.get(item.personaId);
+            const personaNombre = persona ? `${persona.nombre} ${persona.apellido}` : 'N/A';
 
-    const proyectoNombre = proyectosMap.get(item.proyectoId)?.nombre || 'N/A';
+            const proyectoNombre = proyectosMap.get(item.proyectoId)?.nombre || 'N/A';
 
-    return (
-      <TableRow key={`entregable-${index}`} className="hover:bg-accent/10 transition-colors">
-        <TableCell className="font-medium text-foreground whitespace-nowrap">{personaNombre}</TableCell>
-        <TableCell className="text-muted-foreground">{proyectoNombre}</TableCell>
-        <TableCell className="text-sm">{item.numeroEntregable}</TableCell>
-        <TableCell className="text-sm">{formatDateToDDMMYYYY(item.fechaEntrega)}</TableCell>
-        <TableCell className="text-right">
-          <Badge variant={badgeVariant} className="font-medium">
-            {item.diasRestantes} días
-          </Badge>
-        </TableCell>
-      </TableRow>
-    );
-  }}
-  noDataContent={(
-    <div className="flex flex-col items-center justify-center h-48 text-muted-foreground bg-gradient-to-br from-secondary/10 to-secondary/5 rounded-xl border border-dashed border-border/50">
-      <Package className="h-12 w-12 mb-3 text-muted-foreground/50" />
-      <p className="text-lg font-medium">🎉 No hay vencimientos próximos</p>
-      <p className="text-sm">Todos los entregables están al día</p>
-    </div>
-  )}
-/>
-
+            return (
+              <TableRow key={`entregable-${index}`} className="hover:bg-accent/10 transition-colors">
+                <TableCell className="font-medium text-foreground whitespace-nowrap">{personaNombre}</TableCell>
+                <TableCell className="text-muted-foreground">{proyectoNombre}</TableCell>
+                <TableCell className="text-sm">{item.numeroEntregable}</TableCell>
+                <TableCell className="text-sm">{formatDateToDDMMYYYY(item.fechaEntrega)}</TableCell>
+                <TableCell className="text-right">
+                  <Badge variant={badgeVariant} className="font-medium">
+                    {item.diasRestantes} días
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            );
+          }}
+          noDataContent={(
+            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground bg-gradient-to-br from-secondary/10 to-secondary/5 rounded-xl border border-dashed border-border/50">
+              <Package className="h-12 w-12 mb-3 text-muted-foreground/50" />
+              <p className="text-lg font-medium">🎉 No hay vencimientos próximos</p>
+              <p className="text-sm">Todos los entregables están al día</p>
+            </div>
+          )}
+        />
 
         <DataTableCard 
-  title="OS por Vencer (Próximos 15 Días)"
-  icon={Clock}
-  colorClass="text-warning"
-  data={dashboardData.osPorVencerTabla.filter(os => 
-    os.diasRestantes !== null && os.diasRestantes >= 0
-  )}
-  columns={osPorVencerColumns}
-  renderRow={(os, index) => {
-    let badgeVariant = "secondary";
-    if (os.diasRestantes < 5) {
-      badgeVariant = "destructive";
-    } else if (os.diasRestantes <= 15) {
-      badgeVariant = "warning";
-    }
-    
-    return (
-      <TableRow key={`os-${index}`} className="hover:bg-accent/10 transition-colors">
-        <TableCell className="font-medium text-foreground whitespace-nowrap">
-          {os.personaNombre} {os.personaApellido}
-        </TableCell>
-        <TableCell className="text-muted-foreground">{os.proyectoNombre}</TableCell>
-        <TableCell className="text-sm">{formatDateToDDMMYYYY(os.fechaFin)}</TableCell>
-        <TableCell className="text-right">
-          <Badge variant={badgeVariant} className="font-medium">
-            {os.diasRestantes} días
-          </Badge>
-        </TableCell>
-      </TableRow>
-    );
-  }}
-  noDataContent={(
-    <div className="flex flex-col items-center justify-center h-48 text-muted-foreground bg-gradient-to-br from-secondary/10 to-secondary/5 rounded-xl border border-dashed border-border/50">
-      <CalendarDays className="h-12 w-12 mb-3 text-muted-foreground/50" />
-      <p className="text-lg font-medium">👍 Todas las OS están al día</p>
-      <p className="text-sm">Ninguna OS vence en los próximos 15 días</p>
-    </div>
-  )}
-/>
-
+          title="OS por Vencer (Próximos 15 Días)"
+          icon={Clock}
+          colorClass="text-warning"
+          data={dashboardData.osPorVencerTabla.filter(os => 
+            os.diasRestantes !== null && os.diasRestantes >= 0
+          )}
+          columns={osPorVencerColumns}
+          renderRow={(os, index) => {
+            let badgeVariant = "secondary";
+            if (os.diasRestantes < 5) {
+              badgeVariant = "destructive";
+            } else if (os.diasRestantes <= 15) {
+              badgeVariant = "warning";
+            }
+            
+            return (
+              <TableRow key={`os-${index}`} className="hover:bg-accent/10 transition-colors">
+                <TableCell className="font-medium text-foreground whitespace-nowrap">
+                  {os.personaNombre} {os.personaApellido}
+                </TableCell>
+                <TableCell className="text-muted-foreground">{os.proyectoNombre}</TableCell>
+                <TableCell className="text-sm">{formatDateToDDMMYYYY(os.fechaFin)}</TableCell>
+                <TableCell className="text-right">
+                  <Badge variant={badgeVariant} className="font-medium">
+                    {os.diasRestantes} días
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            );
+          }}
+          noDataContent={(
+            <div className="flex flex-col items-center justify-center h-48 text-muted-foreground bg-gradient-to-br from-secondary/10 to-secondary/5 rounded-xl border border-dashed border-border/50">
+              <CalendarDays className="h-12 w-12 mb-3 text-muted-foreground/50" />
+              <p className="text-lg font-medium">👍 Todas las OS están al día</p>
+              <p className="text-sm">Ninguna OS vence en los próximos 15 días</p>
+            </div>
+          )}
+        />
       </div>
 
       {/* New Table: Personal por Proyecto */}
       <DataTableCard 
-        title="Personal por Proyecto"
-        icon={Users}
-        colorClass="text-primary"
-        data={dashboardData.personalPorProyectoData}
-        columns={personalPorProyectoColumns} // <-- Recuerda actualizar esto (quitar "Proyecto")
-        renderRow={(item, index) => {
-          // Lógica de estado (la que ya tenías)
-          const estado = item.activo ? "Activo" : "Inactivo";
-          const badgeVariant = item.activo ? "success" : "destructive";
+        title="Personal por Proyecto"
+        icon={Users}
+        colorClass="text-primary"
+        data={dashboardData.personalPorProyectoData}
+        columns={personalPorProyectoColumns}
+        renderRow={(item, index) => {
+          const estado = item.activo ? "Activo" : "Inactivo";
+          const badgeVariant = item.activo ? "success" : "destructive";
 
-          // Lógica para la agrupación
-          // (ASUME que la data está pre-ordenada por 'proyectoNombre')
-          const showHeader = index === 0 || 
-              dashboardData.personalPorProyectoData[index - 1].proyectoNombre !== item.proyectoNombre;
-          
-          return (
-            // Usamos React.Fragment para renderizar dos filas por item (a veces)
-            <React.Fragment key={`personal-${index}`}>
-              
-              {/* Fila de Encabezado de Grupo (separador por proyecto) */}
+          const showHeader = index === 0 || 
+              dashboardData.personalPorProyectoData[index - 1].proyectoNombre !== item.proyectoNombre;
+          
+          return (
+            <React.Fragment key={`personal-${index}`}>
               {showHeader && (
                 <TableRow className="bg-secondary/60 hover:bg-secondary/60 border-b border-primary/20">
-                  <TableCell colSpan={5} className="font-semibold text-primary py-3">
-                    {/* (Ajusta colSpan={5} al nro de columnas de tu tabla) */}
+                  <TableCell colSpan={6} className="font-semibold text-primary py-3">
                     {item.proyectoNombre}
                   </TableCell>
                 </TableRow>
               )}
               
-              {/* Fila de Datos (sin la celda del proyecto) */}
-              <TableRow className="hover:bg-accent/10 transition-colors">
-                <TableCell className="text-muted-foreground">{item.personaNombre}</TableCell>
-                <TableCell className="text-sm">{item.rol}</TableCell>
-                <TableCell className="text-sm">{formatDateToDDMMYYYY(item.fechaNotificacion)}</TableCell>
-                <TableCell className="text-sm">{formatDateToDDMMYYYY(item.fechaFin)}</TableCell>
-                <TableCell className="text-right">
-                  <Badge variant={badgeVariant} className="font-medium">
-                    {estado}
-                  </Badge>
-                </TableCell>
-              </TableRow>
+              <TableRow className="hover:bg-accent/10 transition-colors">
+                <TableCell className="text-muted-foreground">{item.proyectoNombre}</TableCell>
+                <TableCell className="text-muted-foreground">{item.personaNombre}</TableCell>
+                <TableCell className="text-sm">{item.rol}</TableCell>
+                <TableCell className="text-sm">{formatDateToDDMMYYYY(item.fechaNotificacion)}</TableCell>
+                <TableCell className="text-sm">{formatDateToDDMMYYYY(item.fechaFin)}</TableCell>
+                <TableCell className="text-right">
+                  <Badge variant={badgeVariant} className="font-medium">
+                    {estado}
+                  </Badge>
+                </TableCell>
+              </TableRow>
             </React.Fragment>
-          );
-        }}
-        noDataContent={(
-          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground bg-gradient-to-br from-secondary/10 to-secondary/5 rounded-xl border border-dashed border-border/50">
-            <Users className="h-12 w-12 mb-3 text-muted-foreground/50" />
-            <p className="text-lg font-medium">No hay personal asignado</p>
-            <p className="text-sm">No se encontraron asignaciones de personal a proyectos</p>
-          </div>
-        )}
-      />
-    </div>
-  );
-}
-
-// Componente principal que une ambos tabs
-export function MainApp() {
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const [osList, setOsList] = useState([]);
-  const [personas, setPersonas] = useState([]);
-  const [proyectos, setProyectos] = useState([]);
-
-  // Función para manejar el registro de nuevas OS
-  const handleRegistrarOS = (formData) => {
-    const nuevaOS = {
-      id: Date.now(), // ID temporal
-      ...formData,
-      fechaNotificacion: formatDateToDDMMYYYY(formData.fechaNotificacion),
-      fechaFin: formData.fechaFin,
-      primerEntregable: formData.primerEntregable ? formatDateToDDMMYYYY(formData.primerEntregable) : "",
-      segundoEntregable: formData.segundoEntregable ? formatDateToDDMMYYYY(formData.segundoEntregable) : "",
-      tercerEntregable: formData.tercerEntregable ? formatDateToDDMMYYYY(formData.tercerEntregable) : "",
-      cuartoEntregable: formData.cuartoEntregable ? formatDateToDDMMYYYY(formData.cuartoEntregable) : "",
-    };
-    
-    setOsList([...osList, nuevaOS]);
-  };
-
-  // Función para manejar la edición de OS
-  const handleEditarOS = (formData) => {
-    const osActualizada = {
-      ...formData,
-      fechaNotificacion: formatDateToDDMMYYYY(formData.fechaNotificacion),
-      fechaFin: formData.fechaFin,
-      primerEntregable: formData.primerEntregable ? formatDateToDDMMYYYY(formData.primerEntregable) : "",
-      segundoEntregable: formData.segundoEntregable ? formatDateToDDMMYYYY(formData.segundoEntregable) : "",
-      tercerEntregable: formData.tercerEntregable ? formatDateToDDMMYYYY(formData.tercerEntregable) : "",
-      cuartoEntregable: formData.cuartoEntregable ? formatDateToDDMMYYYY(formData.cuartoEntregable) : "",
-    };
-    
-    setOsList(osList.map(os => 
-      os.id === formData.id ? osActualizada : os
-    ));
-  };
-
-  // Función para manejar la eliminación de OS
-  const handleEliminarOS = (os) => {
-    setOsList(osList.filter(item => item.id !== os.id));
-  };
-
-  return (
-    <div>
-      <div className="flex border-b">
-        <button
-          className={`px-4 py-2 ${activeTab === "dashboard" ? "border-b-2 border-primary font-semibold" : ""}`}
-          onClick={() => setActiveTab("dashboard")}
-        >
-          Dashboard
-        </button>
-        <button
-          className={`px-4 py-2 ${activeTab === "gestion" ? "border-b-2 border-primary font-semibold" : ""}`}
-          onClick={() => setActiveTab("gestion")}
-        >
-          Gestión de OS
-        </button>
-      </div>
-      
-      {activeTab === "dashboard" && (
-        <DashboardTab 
-          proyectos={proyectos} 
-          personas={personas} 
-          osList={osList} 
-        />
-      )}
-      
-      {activeTab === "gestion" && (
-        <GestionOSTab
-          osList={osList}
-          personas={personas}
-          proyectos={proyectos}
-          onRegistrarOS={handleRegistrarOS}
-          onEditarOS={handleEditarOS}
-          onEliminarOS={handleEliminarOS}
-        />
-      )}
+          );
+        }}
+        noDataContent={(
+          <div className="flex flex-col items-center justify-center h-48 text-muted-foreground bg-gradient-to-br from-secondary/10 to-secondary/5 rounded-xl border border-dashed border-border/50">
+            <Users className="h-12 w-12 mb-3 text-muted-foreground/50" />
+            <p className="text-lg font-medium">No hay personal asignado</p>
+            <p className="text-sm">No se encontraron asignaciones de personal a proyectos</p>
+          </div>
+        )}
+      />
     </div>
   );
 }
