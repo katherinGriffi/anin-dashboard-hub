@@ -220,6 +220,33 @@ const CumulativeLineChartCard = ({ title, data, projectKeys, icon: Icon = Trendi
   </Card>
 );
 
+const CumulativePeopleChartCard = ({ title, data, projectKeys, icon: Icon = Users }) => (
+  <Card className="shadow-lg border-0 bg-gradient-to-br from-card via-card/95 to-secondary/5 backdrop-blur-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+    <CardHeader className="pb-4">
+      <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
+        <div className="p-2 bg-secondary/10 rounded-lg">
+          <Icon className="h-4 w-4 text-secondary" />
+        </div>
+        {title}
+      </CardTitle>
+    </CardHeader>
+    <CardContent>
+      <ResponsiveContainer width="100%" height={350}>
+        <LineChart data={data} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+          <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={11} />
+          <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={11} />
+          <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px' }} />
+          <Legend verticalAlign="top" />
+          {projectKeys.map((key, index) => (
+            <Line key={key} type="monotone" dataKey={key} stroke={EVOLUTION_COLORS[index % EVOLUTION_COLORS.length]} name={key} strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 7 }} />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+    </CardContent>
+  </Card>
+);
+
 // --- MAIN DASHBOARD COMPONENT ---
 export function DashboardTab({ proyectos = [], personas = [], osList = [] }) {
   const [filtroProyecto, setFiltroProyecto] = useState("todos");
@@ -259,10 +286,12 @@ export function DashboardTab({ proyectos = [], personas = [], osList = [] }) {
     const personasAlocadasIds = new Set(osVigentes.map(os => os.personaId));
     const personasAlocadasCount = personasAlocadasIds.size;
     
-    const entregablesPorVencer7dias = todosLosEntregables.filter(e => e.diasRestantes >= 0 && e.diasRestantes <= 7).length;
+    const entregablesPorVencer7dias = 
+    todosLosEntregables.filter(item =>item.diasRestantes !== null && item.diasRestantes >= 0 && item.diasRestantes <= 7).length;
+
     const osPorVencer15dias = osVigentes.filter(os => {
       const diasRestantes = calcularDiasRestantes(os.fechaFin);
-      return diasRestantes !== null && diasRestantes <= 15;
+      return diasRestantes !== null && diasRestantes <= 7;
     });
     
     const promedioContractosPorPersona = personasAlocadasCount > 0 ? (osVigentes.length / personasAlocadasCount).toFixed(1) : 0;
@@ -310,39 +339,7 @@ export function DashboardTab({ proyectos = [], personas = [], osList = [] }) {
       };
     }).reverse();
     
-    // CORRECCIÓN: Implementación correcta para osAcumuladasPorProyectoData
-    const osAcumuladasPorProyectoData = meses.map((mes, mesIndex) => {
-      const monthData = { name: mes.nombre };
-      
-      // Initialize cumulative counts for each project
-      projectKeys.forEach(proyectoNombre => {
-        monthData[proyectoNombre] = 0;
-      });
-      
-      // Calculate cumulative counts up to this month
-      for (let i = 0; i <= mesIndex; i++) {
-        const currentMes = meses[i];
-        
-        const nuevosContratos = osFiltradas.filter(os => {
-          const inicioOS = new Date(os.fechaNotificacion);
-          return inicioOS.getFullYear() === currentMes.inicio.getFullYear() && 
-                 inicioOS.getMonth() === currentMes.inicio.getMonth();
-        });
-        
-        // Add to cumulative counts for each project
-        nuevosContratos.forEach(os => {
-          const proyectoNombre = proyectosMap.get(os.proyectoId)?.nombre;
-          if (proyectoNombre && projectKeys.includes(proyectoNombre)) {
-            monthData[proyectoNombre]++;
-          }
-        });
-      }
-      
-      return monthData;
-    });
-
-    // Calculation for the cost evolution chart
-    let cumulativeCosts = projectKeys.reduce((acc, key) => ({ ...acc, [key]: 0 }), {});
+    // Función auxiliar para parsear fechas
     const parseDateFlexible = (dateStr) => {
       if (!dateStr) return null;
 
@@ -360,13 +357,90 @@ export function DashboardTab({ proyectos = [], personas = [], osList = [] }) {
       const dt = new Date(dateStr);
       return isNaN(dt.getTime()) ? null : dt;
     };
+    
+    // CORRECCIÓN: Implementación correcta para osAcumuladasPorProyectoData
+    const osAcumuladasPorProyectoData = meses.map((mes, mesIndex) => {
+      const monthData = { name: mes.nombre };
+      
+      // Initialize cumulative counts for each project
+      projectKeys.forEach(proyectoNombre => {
+        monthData[proyectoNombre] = 0;
+      });
+      
+      // Calculate cumulative counts up to this month
+      for (let i = 0; i <= mesIndex; i++) {
+        const currentMes = meses[i];
+        
+        const nuevosContratos = osFiltradas.filter(os => {
+          const inicioOS = parseDateFlexible(os.fechaNotificacion);
+          return inicioOS && 
+                 inicioOS.getFullYear() === currentMes.inicio.getFullYear() && 
+                 inicioOS.getMonth() === currentMes.inicio.getMonth();
+        });
+        
+        // Add to cumulative counts for each project
+        nuevosContratos.forEach(os => {
+          const proyectoNombre = proyectosMap.get(os.proyectoId)?.nombre;
+          if (proyectoNombre && projectKeys.includes(proyectoNombre)) {
+            monthData[proyectoNombre]++;
+          }
+        });
+      }
+      
+      return monthData;
+    });
+
+    // Cálculo CORREGIDO para la evolución acumulada de personas por proyecto
+    const personasAcumuladasPorProyectoData = meses.map((mes, mesIndex) => {
+      const monthData = { name: mes.nombre };
+      
+      // Inicializar contadores para cada proyecto
+      projectKeys.forEach(proyectoNombre => {
+        monthData[proyectoNombre] = 0;
+      });
+      
+      // Calcular personas únicas por proyecto hasta este mes
+      const personasPorProyectoAcumulado = {};
+      projectKeys.forEach(proyectoNombre => {
+        personasPorProyectoAcumulado[proyectoNombre] = new Set();
+      });
+      
+      for (let i = 0; i <= mesIndex; i++) {
+        const currentMes = meses[i];
+        
+        const nuevosContratos = osFiltradas.filter(os => {
+          const inicioOS = parseDateFlexible(os.fechaNotificacion);
+          return inicioOS && 
+                 inicioOS.getFullYear() === currentMes.inicio.getFullYear() && 
+                 inicioOS.getMonth() === currentMes.inicio.getMonth();
+        });
+        
+        // Para cada proyecto, agregar personas únicas de los contratos de este mes
+        nuevosContratos.forEach(os => {
+          const proyectoNombre = proyectosMap.get(os.proyectoId)?.nombre;
+          if (proyectoNombre && projectKeys.includes(proyectoNombre)) {
+            personasPorProyectoAcumulado[proyectoNombre].add(os.personaId);
+          }
+        });
+      }
+      
+      // Convertir los Sets a conteos para el mes actual
+      projectKeys.forEach(proyectoNombre => {
+        monthData[proyectoNombre] = personasPorProyectoAcumulado[proyectoNombre].size;
+      });
+      
+      return monthData;
+    });
+
+    // Calculation for the cost evolution chart
+    let cumulativeCosts = projectKeys.reduce((acc, key) => ({ ...acc, [key]: 0 }), {});
      
     const costosPorProyectoData = meses.map(mes => {
       projectKeys.forEach(proyectoNombre => {
         const proyecto = proyectos.find(p => p.nombre === proyectoNombre);
         if (proyecto) {
           const osDelMes = osFiltradas.filter(os => {
-            const inicioOS = parseDateFlexible(os.fechaNotificacion || os.fechaNotificacion); 
+            const inicioOS = parseDateFlexible(os.fechaNotificacion); 
             
             return inicioOS && 
                    inicioOS.getFullYear() === mes.inicio.getFullYear() &&
@@ -447,6 +521,7 @@ export function DashboardTab({ proyectos = [], personas = [], osList = [] }) {
       estadoEntregablesData,
       rendimientoPorPersonaData,
       osAcumuladasPorProyectoData,
+      personasAcumuladasPorProyectoData,
       costosPorProyectoData,
       projectKeys,
       proximosVencimientosTabla,
@@ -548,12 +623,16 @@ export function DashboardTab({ proyectos = [], personas = [], osList = [] }) {
 
       {/* Advanced Trend Analysis */}
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-        <CumulativeLineChartCard 
-          title="Evolución Acumulada de Contratos por Proyecto" 
-          data={dashboardData.osAcumuladasPorProyectoData} 
+        
+        <CumulativePeopleChartCard 
+          title="Evolución Acumulada de Personas por Proyecto" 
+          data={dashboardData.personasAcumuladasPorProyectoData} 
           projectKeys={dashboardData.projectKeys}
-          icon={TrendingUp}
+          icon={Users}
         />
+      
+
+      
         <CumulativeLineChartCard 
           title="Costos por Proyecto (Evolución Mensual)" 
           data={dashboardData.costosPorProyectoData} 
@@ -565,12 +644,12 @@ export function DashboardTab({ proyectos = [], personas = [], osList = [] }) {
       {/* Tables Section */}
       <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
         <DataTableCard 
-          title="Próximos Vencimientos de Entregables (≤ 15 días)"
+          title="Próximos Vencimientos de Entregables (≤ 7 días)"
           icon={Package}
           colorClass="text-destructive"
           data={dashboardData.todosLosEntregables
             .filter(item => 
-              item.diasRestantes !== null && item.diasRestantes >= 0 && item.diasRestantes <= 15
+              item.diasRestantes !== null && item.diasRestantes >= 0 && item.diasRestantes <= 7
             )
             .sort((a, b) => a.diasRestantes - b.diasRestantes)
           }
