@@ -22,7 +22,7 @@ function PersonaFormModal({ isOpen, onClose, persona, roles, onSubmit }) {
     email: "",
     nro_celular: "",
     rol: "",
-    valor: "",
+    //valor: "",
     activo: true,
   };
   const [formData, setFormData] = useState(initialState);
@@ -35,7 +35,7 @@ function PersonaFormModal({ isOpen, onClose, persona, roles, onSubmit }) {
           ...initialState, // Empezamos con el estado inicial para evitar campos undefined
           ...persona,
           nro_celular: persona.nro_celular || "",
-          valor: persona.valor || "",
+         // valor: persona.valor || "",
           rol: persona.rol || "",
           activo: persona.activo !== undefined ? persona.activo : true,
         });
@@ -88,10 +88,7 @@ function PersonaFormModal({ isOpen, onClose, persona, roles, onSubmit }) {
               <Label htmlFor="nro_celular">Nro. Celular</Label>
               <Input id="nro_celular" value={formData.nro_celular} onChange={(e) => setFormData({ ...formData, nro_celular: e.target.value })} className="bg-background/50" />
             </div>
-             <div className="space-y-2">
-              <Label htmlFor="valor">Valor</Label>
-              <Input id="valor" value={formData.valor} onChange={(e) => setFormData({ ...formData, valor: e.target.value })} className="bg-background/50" />
-            </div>
+             
           </div>
           <div className="space-y-2">
             <Label>Rol *</Label>

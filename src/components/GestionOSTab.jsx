@@ -47,8 +47,35 @@ import {
   X,
   AlertCircle,
   CheckCircle,
-  Clock
+  Clock,
+  XCircle,
 } from "lucide-react";
+
+/**
+ * GestionOSTab
+ *
+ * Props:
+ * - osList: array con las OS (cada objeto puede tener las propiedades del excel)
+ * - personas: array de personas { id, nombre, apellido, activo }
+ * - proyectos: array de proyectos { id, nombre, activo }
+ * - onRegistrarOS(formData)
+ * - onEditarOS(formData)
+ * - onEliminarOS(id)
+ *
+ * Nota: formData usa campos:
+ * - idOs (ID OS - número de orden)
+ * - personaId
+ * - proyectoId
+ * - tipoContrato ("OS"|"CAS")
+ * - duracion (días) -- para OS
+ * - fechaNotificacion (YYYY-MM-DD)
+ * - fechaInicio (YYYY-MM-DD)  <-- lo usamos como inicio para cálculos
+ * - fechaFin (dd/mm/yyyy o "Indeterminado")
+ * - numeroEntregables (1-4)
+ * - primerEntregable ... cuartoEntregable (dd/mm/yyyy)
+ * - activa (boolean o "Sí"/"No")
+ * - valorOs (valor que no mostramos en la tabla)
+ */
 
 export function GestionOSTab({
   osList = [],
@@ -57,20 +84,25 @@ export function GestionOSTab({
   onRegistrarOS = () => console.warn("onRegistrarOS no está definido"),
   onEditarOS = () => console.warn("onEditarOS no está definido"),
   onEliminarOS = () => console.warn("onEliminarOS no está definido"),
-}){
-  const initialState = {
-    personaId: "",
-    proyectoId: "",
-    tipoContrato: "",
-    duracion: "",
-    fechaInicio: "",
-    fechaFin: "",
-    numeroEntregables: "",
-    primerEntregable: "",
-    segundoEntregable: "",
-    tercerEntregable: "",
-    cuartoEntregable: "",
-  };
+}) {
+
+ const initialState = {
+  idOs: "",
+  personaId: "",
+  proyectoId: "",
+  tipoContrato: "",
+  duracion: "",
+  fechaNotificacion: "",
+  fechaFin: "",
+  numeroEntregables: "", 
+  primerEntregable: "",
+  segundoEntregable: "",
+  tercerEntregable: "",
+  cuartoEntregable: "",
+  activa: true,
+  valorOs: "",
+  frecuenciaDias: "",    // <-- MOVIDO AL FINAL
+};
 
   const [formData, setFormData] = useState(initialState);
   const [showModal, setShowModal] = useState(false);
@@ -80,163 +112,272 @@ export function GestionOSTab({
     direction: "ascending",
   });
   const [modoEdicion, setModoEdicion] = useState(false);
-  const [filtroProyecto, setFiltroProyecto] = useState("all");  
-  const [filtroTipo, setFiltroTipo] = useState("all");         
-  const [filtroEstado, setFiltroEstado] = useState("all");     
-  const [filtroPersona, setFiltroPersona] = useState("all");    
+  const [filtroProyecto, setFiltroProyecto] = useState("all");
+  const [filtroTipo, setFiltroTipo] = useState("all");
+  const [filtroEstado, setFiltroEstado] = useState("all");
+  const [filtroPersona, setFiltroPersona] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
-  const isCasContract = formData.tipoContrato === "CAS";
-  const isOsContract = formData.tipoContrato === "OS"
 
-  // --- Handlers ---
-  const openModal = (os = null) => {
-    if (os) {
-      setModoEdicion(true);
-      setFormData(os);
-    } else {
-      setModoEdicion(false);
-      setFormData(initialState);
-    }
-    setShowModal(true);
-  };
   
+  const isCasContract = formData.tipoContrato === "CAS";
+  const isOsContract = formData.tipoContrato === "OS";
+
+  // ---------- Helpers de fecha ----------
+  const parseDateFlexible = (dateStr) => {
+    // Acepta 'dd/mm/yyyy' o 'yyyy-mm-dd' o null/"" -> devuelve Date o null
+    if (!dateStr) return null;
+    // dd/mm/yyyy
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+      const [d, m, y] = dateStr.split("/");
+      const dt = new Date(Number(y), Number(m) - 1, Number(d));
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+    // yyyy-mm-dd
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const dt = new Date(dateStr + "T00:00:00");
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+    // fallback: try Date parse
+    const dt = new Date(dateStr);
+    return isNaN(dt.getTime()) ? null : dt;
+  };
+
+  const formatDateToDDMMYYYY = (dateStr) => {
+  if (!dateStr) return "";
+  
+  // Si ya está en formato dd/mm/yyyy, devolverlo directamente
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+  
+  // Si es una fecha en formato yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    const [year, month, day] = dateStr.split('-');
+    return `${day}/${month}/${year}`;
+  }
+  
+  // Para otros formatos, intentar parsear con Date
+  const dt = new Date(dateStr);
+  if (isNaN(dt.getTime())) return "";
+  
+  const d = String(dt.getDate()).padStart(2, "0");
+  const m = String(dt.getMonth() + 1).padStart(2, "0");
+  const y = dt.getFullYear();
+  return `${d}/${m}/${y}`;
+};
+
+  // ---------- Modal open/close ----------
+ const openModal = (os = null) => {
+  if (os) {
+    setModoEdicion(true);
+    setFormData({
+      idOs: os.idOs || os.id || "",
+      personaId: os.personaId ? String(os.personaId) : "",
+      proyectoId: os.proyectoId ? String(os.proyectoId) : "",
+      tipoContrato: os.tipoContrato || "",
+      duracion: os.duracion || "",
+      fechaNotificacion: os.fechaNotificacion || "",
+      fechaFin: os.fechaFin || "",
+      numeroEntregables: os.numeroEntregables || "",
+      frecuenciaDias: os.frecuenciaDias || "", // Nuevo campo
+      primerEntregable: os.primerEntregable || "",
+      segundoEntregable: os.segundoEntregable || "",
+      tercerEntregable: os.tercerEntregable || "",
+      cuartoEntregable: os.cuartoEntregable || "",
+      activa: typeof os.activa !== "undefined" ? os.activa : true,
+      valorOs: os.valorOs || "",
+    });
+  } else {
+    setModoEdicion(false);
+    setFormData(initialState);
+  }
+  setShowModal(true);
+};
   const closeModal = () => {
     setShowModal(false);
     setFormData(initialState);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (modoEdicion) {
-      onEditarOS(formData);
-    } else {
-      onRegistrarOS(formData);
-    }
-    closeModal();
-  };
 
-  const handleEliminar = (id) => {
-    if (window.confirm("¿Seguro que deseas eliminar esta OS?")) {
-      onEliminarOS(id);
-    }
-  };
+// Función para convertir fecha a número de serie de Excel
+const convertDateToExcelSerial = (dateStr) => {
+  if (!dateStr || dateStr === "Indeterminado") return dateStr;
+  
+  const date = parseDateFlexible(dateStr);
+  if (!date) return "";
+  
+  // Excel usa un sistema donde 1 = 1 de enero de 1900
+  const excelEpoch = new Date(1899, 11, 30); // 30/12/1899
+  const diffTime = date - excelEpoch;
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
+};
 
-  // --- Effects ---
+// Función para formatear datos para Excel
+const formatDataForExcel = (formData) => {
+  return {
+    "ID OS": formData.idOs || "", // <--- La clave es "ID OS" (con espacio)
+    "Persona ID": formData.personaId || "",
+    "Proyecto ID": formData.proyectoId || "",
+    // ...etc.
+  };
+};
+
+  // ---------- Submit / eliminar ----------
+const handleSubmit = (e) => {
+    e.preventDefault();
+
+    // Tus validaciones (que ya comprueban idOs)
+    if (!formData.idOs || String(formData.idOs).trim() === "") {
+      alert("El Nro de Orden (ID OS) es obligatorio para registrar.");
+      return;
+    }
+    if (!isFormValid()) {
+      alert("Por favor complete todos los campos obligatorios");
+      return;
+    }
+  
+    // ¡Esta es la parte importante!
+    const excelFormattedData = formatDataForExcel(formData);
+  
+    if (modoEdicion) {
+      onEditarOS(formData);
+    } else {
+      onRegistrarOS(formData);
+    }
+    closeModal();
+  };
+
+  const handleEliminar = (os) => {
+  if (window.confirm("¿Seguro que deseas eliminar esta OS?")) {
+    onEliminarOS(os); // Pasar el objeto completo en lugar de solo el ID
+  }
+};
+
+  // ---------- Efectos ----------
+useEffect(() => {
+  if (isCasContract) {
+    setFormData((prev) => ({
+      ...prev,
+      duracion: "Indeterminado",
+      fechaFin: "Indeterminado",
+      numeroEntregables: "",
+      primerEntregable: "",
+      segundoEntregable: "",
+      tercerEntregable: "",
+      cuartoEntregable: "",
+      // NO limpiar idOs: mantener el valor si existe
+    }));
+  } else {
+    setFormData((prev) => ({
+      ...prev,
+      duracion: prev.duracion === "Indeterminado" ? "" : prev.duracion,
+      fechaFin: prev.fechaFin === "Indeterminado" ? "" : prev.fechaFin,
+    }));
+  }
+}, [isCasContract]);
+
+  // Calcular fecha fin cuando sea OS y tengamos fechaInicio + duracion
   useEffect(() => {
-    if (isCasContract) {
-      setFormData((prev) => ({
-        ...prev,
-        duracion: "Indeterminado",
-        fechaFin: "Indeterminado",
-        numeroEntregables: "",
-        primerEntregable: "",
-        segundoEntregable: "",
-        tercerEntregable: "",
-        cuartoEntregable: "",
-      }));
-    } else {
-      // Al cambiar a OS, limpiar duración y fechaFin para que se recalculen
-      setFormData((prev) => ({ ...prev, duracion: "", fechaFin: "" }));
+    if (isOsContract && formData.fechaNotificacion && Number(formData.duracion) > 0) {
+      const startDate = parseDateFlexible(formData.fechaNotificacion);
+      if (startDate) {
+        const durationDays = Number(formData.duracion);
+        const endDate = new Date(startDate.getTime());
+        endDate.setDate(endDate.getDate() + durationDays);
+        const formatted = formatDateToDDMMYYYY(endDate.toISOString().slice(0, 10));
+        setFormData((prev) => ({ ...prev, fechaFin: formatted }));
+      }
     }
-  }, [isCasContract]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.fechaNotificacion, formData.duracion, isOsContract]);
 
-  useEffect(() => {
-    // Calcula fecha de fin basado en inicio y duración solo para OS
-    if (isOsContract && formData.fechaInicio && formData.duracion > 0) {
-      const startDate = new Date(formData.fechaInicio + "T00:00:00");
-      const durationDays = parseInt(formData.duracion, 10);
-      startDate.setDate(startDate.getDate() + durationDays);
-      const day = String(startDate.getDate()).padStart(2, "0");
-      const month = String(startDate.getMonth() + 1).padStart(2, "0");
-      const year = startDate.getFullYear();
-      setFormData((prev) => ({ ...prev, fechaFin: `${day}/${month}/${year}` }));
-    }
-  }, [formData.fechaInicio, formData.duracion, isOsContract]);
+  // Calcular entregables (1..4) distribuidos entre fechaInicio y fechaFin
+ // ========== MODIFICACIÓN CENTRAL: CÁLCULO DE ENTREGABLES ==========
+  
+ useEffect(() => {
+  const clearDeliverables = (prev) => ({
+    ...prev,
+    primerEntregable: "",
+    segundoEntregable: "",
+    tercerEntregable: "",
+    cuartoEntregable: "",
+  });
 
-  // ✅ NUEVO useEffect para calcular entregables
-  useEffect(() => {
-    const clearDeliverables = (prev) => ({
-        ...prev,
-        primerEntregable: "",
-        segundoEntregable: "",
-        tercerEntregable: "",
-        cuartoEntregable: "",
-    });
+  const { fechaNotificacion, duracion, frecuenciaDias, numeroEntregables } = formData;
 
-    // Condiciones para calcular: ser OS, y tener los 3 datos necesarios.
-    if (!isOsContract || !formData.fechaInicio || !formData.fechaFin || !(formData.numeroEntregables > 0)) {
-        setFormData(clearDeliverables);
-        return;
+  // Si no hay datos suficientes, limpiar entregables y salir
+  if (!isOsContract || !fechaNotificacion || !(Number(duracion) > 0) || 
+      !(Number(frecuenciaDias) > 0) || !(Number(numeroEntregables) > 0)) {
+    setFormData(clearDeliverables);
+    return;
+  }
+
+  try {
+    const startDate = parseDateFlexible(fechaNotificacion);
+    if (!startDate) {
+      setFormData(clearDeliverables);
+      return;
     }
 
-    try {
-        const startDate = new Date(formData.fechaInicio + "T00:00:00");
-        const [day, month, year] = formData.fechaFin.split('/');
-        const endDate = new Date(`${year}-${month}-${day}T00:00:00`);
+    const totalDays = Number(duracion);
+    const frequencyDays = Number(frecuenciaDias);
+    const numEntregables = Math.min(Number(numeroEntregables), 4); // Máximo 4 entregables
 
-        // Validar que las fechas sean correctas
-        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || startDate > endDate) {
-            setFormData(clearDeliverables);
-            return;
-        }
-
-        const numEntregables = parseInt(formData.numeroEntregables, 10);
-        
-        // Si solo hay un entregable, su fecha es la fecha de fin.
-        if (numEntregables === 1) {
-             setFormData(prev => ({
-                ...clearDeliverables(prev),
-                primerEntregable: formData.fechaFin,
-            }));
-            return;
-        }
-
-        const totalTimeSpan = endDate.getTime() - startDate.getTime();
-        // El intervalo se calcula entre los puntos, no sobre la duración total.
-        const interval = totalTimeSpan / (numEntregables - 1);
-
-        const newEntregables = {};
-        const fields = ["primerEntregable", "segundoEntregable", "tercerEntregable", "cuartoEntregable"];
-
-        for (let i = 0; i < numEntregables && i < fields.length; i++) {
-            // La fecha de cada entregable se calcula sumando los intervalos a la fecha de inicio
-            const entregableDate = new Date(startDate.getTime() + i * interval);
-            
-            const d = String(entregableDate.getDate()).padStart(2, "0");
-            const m = String(entregableDate.getMonth() + 1).padStart(2, "0");
-            const y = entregableDate.getFullYear();
-            newEntregables[fields[i]] = `${d}/${m}/${y}`;
-        }
-        
-        // Forzamos que el último entregable sea exactamente la fecha de fin para evitar errores de milisegundos
-        newEntregables[fields[numEntregables-1]] = formData.fechaFin;
-
-        // Limpiar los campos de entregables que no se usarán
-        for (let i = numEntregables; i < fields.length; i++) {
-            newEntregables[fields[i]] = "";
-        }
-
-        setFormData((prev) => ({
-            ...prev,
-            ...newEntregables,
-        }));
-
-    } catch (error) {
-        console.error("Error al calcular fechas de entregables:", error);
-        setFormData(clearDeliverables);
+    if (numEntregables <= 0) {
+      setFormData(clearDeliverables);
+      return;
     }
-  }, [formData.fechaInicio, formData.fechaFin, formData.numeroEntregables, isOsContract]);
 
-  // --- Helpers ---
+    const fields = ["primerEntregable", "segundoEntregable", "tercerEntregable", "cuartoEntregable"];
+    const newEntregables = {};
+
+    // Calcular la fecha de cada entregable
+    for (let i = 0; i < numEntregables; i++) {
+      const daysToAdd = (i + 1) * frequencyDays;
+      // Asegurar que no exceda la duración total
+      if (daysToAdd > totalDays) break;
+      
+      const deliverableDate = new Date(startDate.getTime());
+      deliverableDate.setDate(deliverableDate.getDate() + daysToAdd);
+      newEntregables[fields[i]] = formatDateToDDMMYYYY(deliverableDate);
+    }
+
+    // Limpiar los campos de entregables que no se usarán
+    for (let i = numEntregables; i < fields.length; i++) {
+      newEntregables[fields[i]] = "";
+    }
+
+    setFormData((prev) => ({ ...prev, ...newEntregables }));
+  } catch (error) {
+    console.error("Error al calcular entregables:", error);
+    setFormData(clearDeliverables);
+  }
+}, [formData.fechaNotificacion, formData.duracion, formData.frecuenciaDias, formData.numeroEntregables, isOsContract]);
+  // ---------- Cálculos y utilidades para la tabla ----------
   const calcularDiasRestantes = (fechaFin) => {
-    if (!fechaFin || fechaFin === "Indeterminado" || !/^\d{2}\/\d{2}\/\d{4}$/.test(fechaFin)) return null;
-    const [day, month, year] = fechaFin.split('/');
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const fin = new Date(year, month - 1, day);
-    const diffTime = fin - hoy;
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
+  if (!fechaFin || fechaFin === "Indeterminado") return null;
+  
+  // Convertir fecha en formato dd/mm/yyyy a Date object
+  let finDate;
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(fechaFin)) {
+    const [day, month, year] = fechaFin.split("/");
+    finDate = new Date(Number(year), Number(month) - 1, Number(day));
+  } else if (/^\d{4}-\d{2}-\d{2}$/.test(fechaFin)) {
+    // Si viene en formato yyyy-mm-dd
+    finDate = new Date(fechaFin + "T00:00:00");
+  } else {
+    return null;
+  }
+  
+  if (isNaN(finDate.getTime())) return null;
+  
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  finDate.setHours(0, 0, 0, 0);
+  
+  const diffTime = finDate - hoy;
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+};
 
   const getEstadoFechaBadge = (diasRestantes) => {
     if (diasRestantes === null) return { variant: "secondary", icon: null };
@@ -252,15 +393,30 @@ export function GestionOSTab({
     return { text: "Vigente", variant: "success", icon: <CheckCircle className="h-3.5 w-3.5 mr-1" /> };
   };
 
+  // Enriquecer lista y formatear campos para mostrar en tabla
   const sortedAndFilteredOsList = useMemo(() => {
     const enriched = osList.map((os) => {
       const persona = personas.find((p) => p.id === os.personaId);
       const proyecto = proyectos.find((p) => p.id === os.proyectoId);
-      const diasRestantes = calcularDiasRestantes(os.fechaFin);
+      // Aceptar fechaFin ya en dd/mm/yyyy o en yyyy-mm-dd
+      const fechaFinDisplay = os.fechaFin ? formatDateToDDMMYYYY(os.fechaFin) : "";
+      const fechaNotificacionDisplay = os.fechaNotificacion ? formatDateToDDMMYYYY(os.fechaNotificacion) : "";
+      const entreg1 = os.primerEntregable ? formatDateToDDMMYYYY(os.primerEntregable) : "";
+      const entreg2 = os.segundoEntregable ? formatDateToDDMMYYYY(os.segundoEntregable) : "";
+      const entreg3 = os.tercerEntregable ? formatDateToDDMMYYYY(os.tercerEntregable) : "";
+      const entreg4 = os.cuartoEntregable ? formatDateToDDMMYYYY(os.cuartoEntregable) : "";
+      const diasRestantes = calcularDiasRestantes(fechaFinDisplay);
       return {
         ...os,
+        idOs: os.idOs ?? os.id ?? "",
         personaNombre: persona ? `${persona.nombre} ${persona.apellido}` : "N/A",
         proyectoNombre: proyecto ? proyecto.nombre : "N/A",
+        fechaFinDisplay,
+        fechaNotificacionDisplay,
+        primerEntregableDisplay: entreg1,
+        segundoEntregableDisplay: entreg2,
+        tercerEntregableDisplay: entreg3,
+        cuartoEntregableDisplay: entreg4,
         diasRestantes,
         estado: getEstadoOS(diasRestantes, os.tipoContrato).text,
       };
@@ -268,10 +424,17 @@ export function GestionOSTab({
 
     let filtered = enriched.filter((os) => {
       const s = filtro.toLowerCase();
+      const matchesSearch =
+        !filtro ||
+        (os.personaNombre && os.personaNombre.toLowerCase().includes(s)) ||
+        (os.proyectoNombre && os.proyectoNombre.toLowerCase().includes(s)) ||
+        ((os.tipoContrato || "").toLowerCase().includes(s)) ||
+        (String(os.idOs || "").toLowerCase().includes(s));
+
       return (
-        (!filtro || os.personaNombre.toLowerCase().includes(s) || os.proyectoNombre.toLowerCase().includes(s) || (os.tipoContrato || "").toLowerCase().includes(s)) &&
-        (filtroProyecto === "all" || os.proyectoId?.toString() === filtroProyecto) &&
-        (filtroPersona === "all" || os.personaId?.toString() === filtroPersona) &&
+        matchesSearch &&
+        (filtroProyecto === "all" || String(os.proyectoId) === filtroProyecto) &&
+        (filtroPersona === "all" || String(os.personaId) === filtroPersona) &&
         (filtroTipo === "all" || os.tipoContrato === filtroTipo) &&
         (filtroEstado === "all" || os.estado === filtroEstado)
       );
@@ -289,13 +452,13 @@ export function GestionOSTab({
         return sortConfig.direction === "descending" ? -comparison : comparison;
       });
     }
+
     return filtered;
   }, [osList, personas, proyectos, filtro, filtroProyecto, filtroTipo, filtroEstado, filtroPersona, sortConfig]);
 
   const handleSort = (key) => {
     let direction = "ascending";
-    if (sortConfig.key === key && sortConfig.direction === "ascending")
-      direction = "descending";
+    if (sortConfig.key === key && sortConfig.direction === "ascending") direction = "descending";
     setSortConfig({ key, direction });
   };
 
@@ -309,21 +472,34 @@ export function GestionOSTab({
       >
         <div className="flex items-center gap-2">
           {children}
-          {isSorting ? (
-            <span>{directionIcon}</span>
-          ) : (
-            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-          )}
+          {isSorting ? <span>{directionIcon}</span> : <ArrowUpDown className="h-4 w-4 text-muted-foreground" />}
         </div>
       </TableHead>
     );
   };
 
-  const isFormValid = () => {
-    const base = formData.personaId && formData.proyectoId && formData.tipoContrato && formData.fechaInicio;
-    if (isOsContract) return base && formData.duracion > 0 && formData.numeroEntregables > 0;
-    return base;
-  };
+const isFormValid = () => {
+  const { personaId, proyectoId, tipoContrato, fechaNotificacion, valorOs, duracion, frecuenciaDias, numeroEntregables, idOs } = formData;
+  const base = personaId && proyectoId && tipoContrato && fechaNotificacion && valorOs;
+  
+  if (!base) return false;
+  
+  // ID OS ahora obligatorio siempre (tanto para CAS como para OS)
+  if (!idOs || String(idOs).trim() === "") return false;
+  
+  if (isOsContract) {
+    const freqDias = Number(frecuenciaDias);
+    const numEntregables = Number(numeroEntregables);
+    
+    return Number(duracion) > 0 && 
+           freqDias > 0 && 
+           numEntregables >= 1 && 
+           numEntregables <= 4;
+  }
+  
+  // Para CAS, si pasa la validación base e idOs, es válido
+  return true;
+};
 
   const clearFilters = () => {
     setFiltro("");
@@ -333,6 +509,7 @@ export function GestionOSTab({
     setFiltroPersona("all");
   };
 
+  // ---------- Render ----------
   return (
     <div className="p-4 md:p-8 space-y-8">
       {/* Header */}
@@ -345,16 +522,14 @@ export function GestionOSTab({
               </div>
               <div>
                 <CardTitle className="text-primary">Gestión de Órdenes de Servicio</CardTitle>
-                <CardDescription>
-                  {osList.length} orden(es) registrada(s)
-                </CardDescription>
+                <CardDescription>{osList.length} orden(es) registrada(s)</CardDescription>
               </div>
             </div>
             <div className="flex gap-3 flex-wrap">
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar OS, persona o proyecto..."
+                  placeholder="Buscar OS, N° orden, persona o proyecto..."
                   className="pl-9 bg-background/50 text-sm"
                   value={filtro}
                   onChange={(e) => setFiltro(e.target.value)}
@@ -449,29 +624,31 @@ export function GestionOSTab({
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader>
-                <TableRow className="bg-secondary/20 hover:bg-secondary/30">
-                  <TableHead className="text-center">ID</TableHead>
-                  <SortableHeader columnKey="personaNombre">Persona</SortableHeader>
-                  <SortableHeader columnKey="proyectoNombre">Proyecto</SortableHeader>
-                  <TableHead className="text-center">Tipo</TableHead>
-                  <TableHead className="text-center">Estado</TableHead>
-                  <TableHead className="text-center">Fecha Fin</TableHead>
-                  <SortableHeader columnKey="diasRestantes">Días Restantes</SortableHeader>
-                  <TableHead className="text-center">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
+          <TableHeader>
+  <TableRow className="bg-secondary/20 hover:bg-secondary/30">
+    <TableHead className="text-center">Nro Orden</TableHead>
+    <SortableHeader columnKey="personaNombre">Persona</SortableHeader>
+    <SortableHeader columnKey="proyectoNombre">Proyecto</SortableHeader>
+    <TableHead className="text-center">Tipo</TableHead>
+    <TableHead className="text-center">Fecha Notificación</TableHead>
+    <TableHead className="text-center">Fecha Fin</TableHead>
+    <SortableHeader columnKey="diasRestantes">Días Restantes</SortableHeader>
+    <TableHead className="text-center">1° Ent.</TableHead>
+    <TableHead className="text-center">2° Ent.</TableHead>
+    <TableHead className="text-center">3° Ent.</TableHead>
+    <TableHead className="text-center">4° Ent.</TableHead>
+    <TableHead className="text-center">Acciones</TableHead>
+  </TableRow>
+</TableHeader>
               <TableBody>
                 {sortedAndFilteredOsList.length > 0 ? (
                   sortedAndFilteredOsList.map((os) => {
                     const estadoOS = getEstadoOS(os.diasRestantes, os.tipoContrato);
                     const estadoFecha = getEstadoFechaBadge(os.diasRestantes);
-                    
+
                     return (
-                      <TableRow key={os.id} className="hover:bg-secondary/20 transition-colors">
-                        <TableCell className="font-medium text-primary text-center">
-                          {os.id}
-                        </TableCell>
+                      <TableRow key={os.idOs || os.id} className="hover:bg-secondary/20 transition-colors">
+                        <TableCell className="font-medium text-primary text-center">{os.idOs || "—"}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <User className="h-4 w-4 text-muted-foreground" />
@@ -485,26 +662,15 @@ export function GestionOSTab({
                           </div>
                         </TableCell>
                         <TableCell className="text-center">
-                          <Badge variant={os.tipoContrato === "OS" ? "default" : "secondary"}>
-                            {os.tipoContrato}
-                          </Badge>
+                          <Badge variant={os.tipoContrato === "OS" ? "default" : "secondary"}>{os.tipoContrato}</Badge>
                         </TableCell>
-                        <TableCell className="text-center">
-                          <Badge variant={estadoOS.variant} className="flex items-center justify-center gap-1 w-full">
-                            {estadoOS.icon}
-                            {estadoOS.text}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {os.fechaFin && os.fechaFin !== "Indeterminado"
-                            ? os.fechaFin
-                            : "Indeterminado"}
-                        </TableCell>
+                       
+                        <TableCell className="text-center">{os.fechaNotificacionDisplay || "—"}</TableCell>
+                        <TableCell className="text-center">{os.fechaFinDisplay || "Indeterminado"}</TableCell>
                         <TableCell className="text-center">
                           {os.diasRestantes !== null && os.diasRestantes < 0 ? (
                             <Badge variant="destructive" className="flex items-center justify-center gap-1">
-                              <XCircle className="h-3.5 w-3.5" />
-                              Finalizado
+                              <XCircle className="h-3.5 w-3.5" /> Finalizado
                             </Badge>
                           ) : os.diasRestantes !== null ? (
                             <Badge variant={estadoFecha.variant} className="flex items-center justify-center gap-1">
@@ -515,26 +681,41 @@ export function GestionOSTab({
                             <Badge variant="secondary">N/A</Badge>
                           )}
                         </TableCell>
+
+                        <TableCell className="text-center">{os.primerEntregableDisplay || "—"}</TableCell>
+                        <TableCell className="text-center">{os.segundoEntregableDisplay || "—"}</TableCell>
+                        <TableCell className="text-center">{os.tercerEntregableDisplay || "—"}</TableCell>
+                        <TableCell className="text-center">{os.cuartoEntregableDisplay || "—"}</TableCell>
+
                         <TableCell>
-                          <div className="flex gap-2 justify-center">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary" onClick={() => openModal(os)}>
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive" onClick={() => handleEliminar(os.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+  <div className="flex gap-2 justify-center">
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+      onClick={() => openModal(os)}
+      aria-label={`Editar OS ${os.idOs || os.id}`}
+    >
+      <Edit className="h-4 w-4" />
+    </Button>
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+      onClick={() => handleEliminar(os)} // Pasar el objeto completo
+      aria-label={`Eliminar OS ${os.idOs || os.id}`}
+    >
+      <Trash2 className="h-4 w-4" />
+    </Button>
+  </div>
+</TableCell>
                       </TableRow>
                     );
                   })
                 ) : (
                   <TableRow>
-                    <TableCell
-                      colSpan={8}
-                      className="h-24 text-center text-muted-foreground bg-secondary/10"
-                    >
-                      {filtro || filtroProyecto !== 'all' || filtroTipo !== 'all' || filtroEstado !== 'all' || filtroPersona !== 'all'
+                    <TableCell colSpan={13} className="h-24 text-center text-muted-foreground bg-secondary/10">
+                      {filtro || filtroProyecto !== "all" || filtroTipo !== "all" || filtroEstado !== "all" || filtroPersona !== "all"
                         ? "No se encontraron órdenes con ese criterio."
                         : "No hay órdenes registradas aún."}
                     </TableCell>
@@ -546,203 +727,238 @@ export function GestionOSTab({
         </CardContent>
       </Card>
 
-      {/* Modal */}
-      <Dialog open={showModal} onOpenChange={(isOpen) => !isOpen && closeModal()}>
-        <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-md border-0 shadow-xl">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-primary">
-              {modoEdicion ? "Editar" : "Registrar Nueva"} Orden de Servicio
-            </DialogTitle>
-            <DialogDescription>
-              Complete los datos para {modoEdicion ? "editar" : "crear una nueva"} orden.
-            </DialogDescription>
-          </DialogHeader>
+    {/* Modal */}
+<Dialog open={showModal} onOpenChange={(isOpen) => !isOpen && closeModal()}>
+  <DialogContent className="sm:max-w-[750px] max-h-[90vh] overflow-y-auto bg-card/95 backdrop-blur-md border-0 shadow-xl">
+    <DialogHeader>
+      <DialogTitle className="text-xl font-semibold text-primary">
+        {modoEdicion ? "Editar" : "Registrar Nueva"} Orden de Servicio
+      </DialogTitle>
+      <DialogDescription>
+        Complete los datos para {modoEdicion ? "editar" : "crear una nueva"} orden.
+      </DialogDescription>
+    </DialogHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-8 py-4">
-            {/* Información básica */}
-            <section className="space-y-4">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-primary border-b pb-2">
-                <FileText className="h-4 w-4" /> Información Básica
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="persona">Persona *</Label>
-                  <Select
-                    value={String(formData.personaId)}
-                    onValueChange={(v) => setFormData({ ...formData, personaId: v })}
-                    required
-                  >
-                    <SelectTrigger id="persona" className="bg-background/50 text-sm">
-                      <SelectValue placeholder="Seleccionar persona" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {personas
-                        .filter((p) => p.activo)
-                        .map((persona) => (
-                          <SelectItem key={persona.id} value={String(persona.id)}>
-                            {persona.nombre} {persona.apellido}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+    <form onSubmit={handleSubmit} className="space-y-8 py-4">
+      {/* Información básica */}
+      <section className="space-y-4">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-primary border-b pb-2">
+          <FileText className="h-4 w-4" /> Información Básica
+        </h3>
 
-                <div className="space-y-2">
-                  <Label htmlFor="proyecto">Proyecto *</Label>
-                  <Select
-                    value={String(formData.proyectoId)}
-                    onValueChange={(v) => setFormData({ ...formData, proyectoId: v })}
-                    required
-                  >
-                    <SelectTrigger id="proyecto" className="bg-background/50 text-sm">
-                      <SelectValue placeholder="Seleccionar proyecto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {proyectos
-                        .filter((p) => p.activo)
-                        .map((proyecto) => (
-                          <SelectItem key={proyecto.id} value={String(proyecto.id)}>
-                            {proyecto.nombre}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Tipo de Contrato - PRIMER CAMPO */}
+          <div className="space-y-2">
+            <Label htmlFor="tipoContrato">Tipo de Contrato *</Label>
+            <Select
+              value={formData.tipoContrato}
+              onValueChange={(v) => setFormData({ ...formData, tipoContrato: v })}
+              required
+            >
+              <SelectTrigger id="tipoContrato" className="bg-background/50 text-sm">
+                <SelectValue placeholder="Seleccionar tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="OS">OS - Orden de Servicio</SelectItem>
+                <SelectItem value="CAS">CAS - Contrato Administrativo</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* ID OS - ahora obligatorio siempre */}
+          <div className="space-y-2">
+            <Label htmlFor="idOs">Nro Orden *</Label>
+<Input
+  id="idOs"
+  type="text"
+  placeholder="Ej. 12345"
+  value={formData.idOs}
+  onChange={(e) => setFormData({ ...formData, idOs: e.target.value })}
+  required // ahora siempre requerido
+  className="bg-background/50 text-sm"
+/>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="persona">Persona *</Label>
+            <Select
+              value={String(formData.personaId)}
+              onValueChange={(v) => setFormData({ ...formData, personaId: v })}
+              required
+            >
+              <SelectTrigger id="persona" className="bg-background/50 text-sm">
+                <SelectValue placeholder="Seleccionar persona" />
+              </SelectTrigger>
+              <SelectContent>
+                {personas
+                  .filter((p) => p.activo !== false)
+                  .map((persona) => (
+                    <SelectItem key={persona.id} value={String(persona.id)}>
+                      {persona.nombre} {persona.apellido}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="proyecto">Proyecto *</Label>
+            <Select
+              value={String(formData.proyectoId)}
+              onValueChange={(v) => setFormData({ ...formData, proyectoId: v })}
+              required
+            >
+              <SelectTrigger id="proyecto" className="bg-background/50 text-sm">
+                <SelectValue placeholder="Seleccionar proyecto" />
+              </SelectTrigger>
+              <SelectContent>
+                {proyectos
+                  .filter((p) => p.activo !== false)
+                  .map((proyecto) => (
+                    <SelectItem key={proyecto.id} value={String(proyecto.id)}>
+                      {proyecto.nombre}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="duracion">Duración (días) {isOsContract ? "*" : ""}</Label>
+            <Input
+              id="duracion"
+              type={isCasContract ? "text" : "number"}
+              placeholder={isCasContract ? "" : "Ej. 90"}
+              value={formData.duracion}
+              onChange={(e) => setFormData({ ...formData, duracion: e.target.value })}
+              required={isOsContract}
+              disabled={isCasContract}
+              className="bg-background/50 text-sm"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="valorOs">Valor *</Label>
+            <Input
+              id="valorOs"
+              type="text"
+              placeholder="Ingresar valor total de la OS"
+              value={formData.valorOs}
+              onChange={(e) => setFormData({ ...formData, valorOs: e.target.value })}
+              required
+              className="bg-background/50 text-sm"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Fechas */}
+      <section className="space-y-4">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-primary border-b pb-2">
+          <Calendar className="h-4 w-4" /> Fechas Importantes
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="fechaNotificacion">Fecha de Notificación*</Label>
+            <Input
+              id="fechaNotificacion"
+              type="date"
+              value={formData.fechaNotificacion}
+              onChange={(e) => setFormData({ ...formData, fechaNotificacion: e.target.value })}
+              required
+              className="bg-background/50 text-sm"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="fechaFin">Fecha de Fin (Calculada)</Label>
+            <Input
+              id="fechaFin"
+              type="text"
+              value={formData.fechaFin}
+              readOnly
+              disabled
+              className="bg-background/50 cursor-not-allowed text-sm"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* SECCIÓN DE ENTREGABLES MEJORADA */}
+     {isOsContract && (
+  <section className="space-y-4">
+    <h3 className="flex items-center gap-2 text-sm font-semibold text-primary border-b pb-2">
+      <FileText className="h-4 w-4" /> Plan de Entregables
+    </h3>
+
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="space-y-2">
+        <Label htmlFor="frecuenciaDias">Frecuencia (días entre entregables) *</Label>
+        <Input
+          id="frecuenciaDias"
+          type="number"
+          placeholder="Ej. 30"
+          min="1"
+          value={formData.frecuenciaDias}
+          onChange={(e) => setFormData({ ...formData, frecuenciaDias: e.target.value })}
+          required={isOsContract}
+          className="bg-background/50 text-sm"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="numeroEntregables">Número de Entregables *</Label>
+        <Input
+          id="numeroEntregables"
+          type="number"
+          placeholder="Ej. 4"
+          min="1"
+          max="4"
+          value={formData.numeroEntregables}
+          onChange={(e) => setFormData({ ...formData, numeroEntregables: e.target.value })}
+          required={isOsContract}
+          className="bg-background/50 text-sm"
+        />
+      </div>
+    </div>
+
+    {/* Entregables con mejor espaciado visual */}
+    {formData.primerEntregable && (
+      <div className="pt-4">
+        <Label className="text-sm font-medium mb-3 block">Fechas de Entregables Calculadas:</Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {['primerEntregable', 'segundoEntregable', 'tercerEntregable', 'cuartoEntregable'].map((fieldName, i) =>
+            formData[fieldName] ? (
+              <div className="space-y-2 p-3 bg-muted/30 rounded-md" key={fieldName}>
+                <Label className="text-xs font-medium">{`${i + 1}° Entregable`}</Label>
+                <div className="flex items-center justify-between text-sm">
+                  <span>{formData[fieldName]}</span>
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
               </div>
+            ) : null
+          )}
+        </div>
+      </div>
+    )}
+  </section>
+)}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="tipoContrato">Tipo de Contrato *</Label>
-                  <Select
-                    value={formData.tipoContrato}
-                    onValueChange={(v) => setFormData({ ...formData, tipoContrato: v })}
-                    required
-                  >
-                    <SelectTrigger id="tipoContrato" className="bg-background/50 text-sm">
-                      <SelectValue placeholder="Seleccionar tipo" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="OS">OS - Orden de Servicio</SelectItem>
-                      <SelectItem value="CAS">CAS - Contrato Administrativo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="duracion">Duración (días) *</Label>
-                  <Input
-                    id="duracion"
-                    type={isCasContract ? "text" : "number"}
-                    placeholder={isCasContract ? "" : "Ej. 90"}
-                    value={formData.duracion}
-                    onChange={(e) =>
-                      setFormData({ ...formData, duracion: e.target.value })
-                    }
-                    required
-                    disabled={isCasContract}
-                    className="bg-background/50 text-sm"
-                  />
-                </div>
-              </div>
-            </section>
-
-            {/* Fechas */}
-            <section className="space-y-4">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-primary border-b pb-2">
-                <Calendar className="h-4 w-4" /> Fechas Importantes
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="fechaInicio">Fecha de Inicio *</Label>
-                  <Input
-                    id="fechaInicio"
-                    type="date"
-                    value={formData.fechaInicio}
-                    onChange={(e) =>
-                      setFormData({ ...formData, fechaInicio: e.target.value })
-                    }
-                    required
-                    className="bg-background/50 text-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="fechaFin">Fecha de Fin (Calculada)</Label>
-                  <Input
-                    id="fechaFin"
-                    type="text"
-                    value={formData.fechaFin}
-                    readOnly
-                    disabled
-                    className="bg-background/50 cursor-not-allowed text-sm"
-                  />
-                </div>
-              </div>
-            </section>
-                
-            {/* ✅ SECCIÓN DE ENTREGABLES MODIFICADA */}
-            {isOsContract && (
-              <section className="space-y-4">
-                <h3 className="flex items-center gap-2 text-sm font-semibold text-primary border-b pb-2">
-                  <FileText className="h-4 w-4" /> Plan de Entregables
-                </h3>
-                <div className="space-y-2">
-                  <Label htmlFor="numeroEntregables">Nro. de Entregables (1 a 4) *</Label>
-                  <Input
-                    id="numeroEntregables"
-                    type="number"
-                    placeholder="Ej. 3"
-                    min="1"
-                    max="4"
-                    value={formData.numeroEntregables}
-                    onChange={(e) => {
-                      const num = parseInt(e.target.value, 10);
-                      if (isNaN(num)) {
-                        setFormData({ ...formData, numeroEntregables: "" });
-                      } else if (num >= 0 && num <= 4) {
-                        setFormData({ ...formData, numeroEntregables: num });
-                      }
-                    }}
-                    required={isOsContract}
-                    className="bg-background/50 text-sm"
-                  />
-                </div>
-
-                {formData.numeroEntregables > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                    {Array.from({ length: formData.numeroEntregables }).map((_, i) => {
-                      const fieldName = [
-                        "primerEntregable",
-                        "segundoEntregable",
-                        "tercerEntregable",
-                        "cuartoEntregable",
-                      ][i];
-                      return (
-                        <div className="space-y-2" key={fieldName}>
-                          <Label>{`${i + 1}° Entregable (Calculado)`}</Label>
-                          <Input
-                            value={formData[fieldName] || "Calculando..."}
-                            disabled
-                            className="bg-background/50 text-sm"
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-            )}
-
-            <DialogFooter className="pt-6 border-t">
-              <Button type="button" variant="outline" onClick={closeModal}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={!isFormValid()} className="bg-primary hover:bg-primary/90">
-                {modoEdicion ? "Guardar Cambios" : "Registrar Orden"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <DialogFooter className="pt-6 border-t">
+        <Button type="button" variant="outline" onClick={closeModal}>
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={!isFormValid()} className="bg-primary hover:bg-primary/90">
+          {modoEdicion ? "Guardar Cambios" : "Registrar Orden"}
+        </Button>
+      </DialogFooter>
+    </form>
+  </DialogContent>
+</Dialog>
     </div>
   );
 }

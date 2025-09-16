@@ -44,7 +44,7 @@ export default function GestionOS() {
   const [proyectosSheetId, setProyectosSheetId] = useState<number | null>(null);
   const [personasSheetId, setPersonasSheetId] = useState<number | null>(null);
   const [rolesSheetId, setRolesSheetId] = useState<number | null>(null);
-  const [osSheetId, setOsSheetId] = useState<number | null>(null); // <-- AÑADE ESTA LÍNEA
+  const [osSheetId, setOsSheetId] = useState<number | null>(null);
 
 
   // --- LÓGICA DE AUTENTICACIÓN Y DATOS ---
@@ -90,7 +90,7 @@ export default function GestionOS() {
       setRolesSheetId(rolesSheet.properties.sheetId);
       setOsSheetId(osSheet.properties.sheetId); 
 
-      const ranges = ["Proyectos!A2:F", "Personas!A2:H", "OS!A2:M", "Roles!A2:A"];
+      const ranges = ["Proyectos!A2:F", "Personas!A2:H", "OS!A2:O", "Roles!A2:A"];
       const response = await window.gapi.client.sheets.spreadsheets.values.batchGet({ spreadsheetId: SPREADSHEET_ID, ranges });
       const [proyectosData, personasData, osData, rolesData] = response.result.valueRanges.map((r) => r.values || []);
 
@@ -107,25 +107,29 @@ export default function GestionOS() {
         rowIndex: index + 2 
       })));
 
-      setOsList(osData
-    .filter(row => row && row[0]) // <-- AÑADE ESTO para ignorar filas donde el ID (columna A) está vacío
-    .map((row, index) => ({
-        id: row[0],
-        personaId: parseInt(row[1]),
-        proyectoId: parseInt(row[2]),
-        tipoContrato: row[3],
-        duracion: parseInt(row[4]),
-        fechaNotificacion: row[5],
-        fechaFin: row[6],
-        primerEntregable: row[7],
-        segundoEntregable: row[8],
-        tercerEntregable: row[9],
-        activa: row[10] === "TRUE",
-        areaCargo: row[11],
-        condicion: row[12],
-        rowIndex: index + 2
-    }))
+    setOsList(osData
+  .filter(row => row && row[0]) 
+  .map((row, index) => ({
+    id: row[0], // Usar id en lugar de idOs para consistencia
+    idOs: row[0], // Mantener idOs para compatibilidad
+    personaId: parseInt(row[1]),
+    proyectoId: parseInt(row[2]),
+    tipoContrato: row[3],
+    duracion: row[4] || "",
+    fechaNotificacion: row[5] || "",
+    fechaInicio: row[6] || "", // Asegurar que esta columna existe
+    fechaFin: row[7] || "",
+    numeroEntregables: row[8] || "",
+    primerEntregable: row[9] || "",
+    segundoEntregable: row[10] || "",
+    tercerEntregable: row[11] || "",
+    cuartoEntregable: row[12] || "",
+    activa: row[13] === "TRUE",
+    valorOs: row[14] || "",
+    rowIndex: index + 2
+  }))
 );
+
       const rolesValidos = rolesData.filter(row => row && row[0] && row[0].trim() !== "");
       setRoles(rolesValidos.map((row, index) => ({ nombre: row[0], rowIndex: index + 2 })));
 
@@ -220,10 +224,42 @@ export default function GestionOS() {
   const handleEliminarPersona = (personaAEliminar: any) => ejecutarOperacion(async () => { if (!personaAEliminar.rowIndex) throw new Error("Persona sin rowIndex."); if (personasSheetId === null) throw new Error("ID de la hoja 'Personas' no encontrado."); if (personas.length === 1) { await window.gapi.client.sheets.spreadsheets.values.clear({ spreadsheetId: SPREADSHEET_ID, range: `Personas!A${personaAEliminar.rowIndex}:H${personaAEliminar.rowIndex}` }); } else { await window.gapi.client.sheets.spreadsheets.batchUpdate({ spreadsheetId: SPREADSHEET_ID, resource: { requests: [{ deleteDimension: { range: { sheetId: personasSheetId, dimension: "ROWS", startIndex: personaAEliminar.rowIndex - 1, endIndex: personaAEliminar.rowIndex } } }] } }); } }, { successMessage: "Persona eliminada.", errorMessage: "Error al eliminar persona." });
 
   // Órdenes de Servicio
-  const registrarOS = (data) => ejecutarOperacion(async () => { let finalId = data.id; if (!finalId) { const nextIdNumber = osList.length > 0 ? Math.max(...osList.map(os => parseInt(os.id.split('-')[1], 10) || 0)) + 1 : 1; finalId = `OS-${String(nextIdNumber).padStart(3, '0')}`; } const condicionFinal = data.condicion === 'Otros' ? data.condicionOtros : data.condicion; const values = [[finalId, data.personaId, data.proyectoId, data.tipoContrato, data.duracion, data.fechaInicio, data.fechaFin, data.primerEntregable, data.segundoEntregable, data.tercerEntregable, true, data.areaCargo, condicionFinal]]; await window.gapi.client.sheets.spreadsheets.values.append({ spreadsheetId: SPREADSHEET_ID, range: "OS!A:M", valueInputOption: "USER_ENTERED", insertDataOption: "INSERT_ROWS", resource: { values } }); }, { successMessage: "Orden de Servicio registrada.", errorMessage: "Error al registrar la OS." });
-// En la sección de Órdenes de Servicio, agrega estas funciones:
+const registrarOS = (data) => ejecutarOperacion(async () => {
+    if (!data.idOs) { // <--- Espera la clave 'idOs' (sin espacio)
+        throw new Error("El Nro de Orden (ID OS) es obligatorio para registrar.");
+    }
 
+    // 2. Define el orden EXACTO de las columnas en tu hoja "OS"
+    const values = [[
+        data.idOs,
+        data.personaId,
+        data.proyectoId,
+        data.tipoContrato,
+        data.duracion,
+        data.fechaNotificacion,
+        data.fechaInicio,
+        data.fechaFin,
+        data.numeroEntregables,
+        data.primerEntregable,
+        data.segundoEntregable,
+        data.tercerEntregable,
+        data.cuartoEntregable,
+        data.activa,
+        data.valorOs,
+    ]];
 
+    // 3. Llama a la API de Google Sheets
+    await window.gapi.client.sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: "OS!A:O", // Asegúrate que el rango cubra todas tus columnas
+        valueInputOption: "USER_ENTERED",
+        insertDataOption: "INSERT_ROWS",
+        resource: { values }
+    });
+}, { 
+    successMessage: "Orden de Servicio registrada con éxito.", 
+    errorMessage: "Error al registrar la OS." 
+});
 
   // Roles
   const handleAddRole = (newRoleName: string) => ejecutarOperacion(
@@ -254,81 +290,82 @@ export default function GestionOS() {
     }, { successMessage: "Rol eliminado con éxito.", errorMessage: "Error al eliminar el rol." }
   );
 
-  // --- FUNCIONES PARA ÓRDENES DE SERVICIO ---
+// --- FUNCIONES PARA ÓRDENES DE SERVICIO ---
+// (Las funciones ya están correctamente declaradas arriba, no es necesario duplicarlas aquí)
 
-// Función para editar OS
-const handleEditarOS = (osEditada) => ejecutarOperacion(async () => { 
-  if (!osEditada.rowIndex) throw new Error("OS sin rowIndex, no se puede editar."); 
-  
-  const condicionFinal = osEditada.condicion === 'Otros' ? osEditada.condicionOtros : osEditada.condicion;
-  
-  const values = [
-    [
-      osEditada.id, 
-      osEditada.personaId, 
-      osEditada.proyectoId, 
-      osEditada.tipoContrato, 
-      osEditada.duracion, 
-      osEditada.fechaInicio, 
-      osEditada.fechaFin, 
-      osEditada.primerEntregable, 
-      osEditada.segundoEntregable, 
-      osEditada.tercerEntregable, 
-      osEditada.activa, 
-      osEditada.areaCargo, 
-      condicionFinal
-    ]
-  ];
-  
-  await window.gapi.client.sheets.spreadsheets.values.update({ 
-    spreadsheetId: SPREADSHEET_ID, 
-    range: `OS!A${osEditada.rowIndex}:M${osEditada.rowIndex}`, 
-    valueInputOption: "USER_ENTERED", 
-    resource: { values } 
-  }); 
-}, { 
-  successMessage: "Orden de Servicio actualizada.", 
-  errorMessage: "Error al actualizar la OS." 
+
+// ========================================================
+// --- FUNCIÓN PARA EDITAR OS (CORREGIDA) ---
+// ========================================================
+const handleEditarOS = (osEditada) => ejecutarOperacion(async () => {
+    // 1. Busca la OS original en la lista para obtener su 'rowIndex'
+    const osOriginal = osList.find(os => os.idOs === osEditada.idOs);
+    if (!osOriginal || !osOriginal.rowIndex) {
+        throw new Error(`No se encontró la fila para la OS con Nro Orden: ${osEditada.idOs}`);
+    }
+
+    // 2. Define el orden EXACTO de las columnas
+    const values = [[
+        osEditada.idOs,
+        osEditada.personaId,
+        osEditada.proyectoId,
+        osEditada.tipoContrato,
+        osEditada.duracion,
+        osEditada.fechaNotificacion,
+        osEditada.fechaInicio,
+        osEditada.fechaFin,
+        osEditada.numeroEntregables,
+        osEditada.primerEntregable,
+        osEditada.segundoEntregable,
+        osEditada.tercerEntregable,
+        osEditada.cuartoEntregable,
+        osEditada.activa,
+        osEditada.valorOs,
+    ]];
+
+    // 3. Llama a la API usando el rowIndex y el rango correcto
+    await window.gapi.client.sheets.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `OS!A${osOriginal.rowIndex}:O${osOriginal.rowIndex}`, // Rango correcto A hasta O
+        valueInputOption: "USER_ENTERED",
+        resource: { values }
+    });
+}, {
+    successMessage: "Orden de Servicio actualizada.",
+    errorMessage: "Error al actualizar la OS."
 });
-
 
 // Reemplaza tu función handleEliminarOS existente con esta
 
-const handleEliminarOS = (osId) => ejecutarOperacion(async () => {
-    // 1. Encontrar la OS en el estado para obtener su rowIndex
-    const osAEliminar = osList.find(os => os.id === osId);
-
-    if (!osAEliminar || !osAEliminar.rowIndex) {
-        throw new Error(`No se encontró la OS con ID: ${osId} para eliminar.`);
-    }
-
-    if (osSheetId === null) {
-        throw new Error("ID de la hoja 'OS' no encontrado. No se puede eliminar.");
-    }
-    
-    // 2. Crear la solicitud para eliminar la fila usando su índice
-    const request = {
-        deleteDimension: {
-            range: {
-                sheetId: osSheetId,
-                dimension: "ROWS",
-                startIndex: osAEliminar.rowIndex - 1, // El índice en la API es base 0
-                endIndex: osAEliminar.rowIndex
-            }
-        }
-    };
-    
-    // 3. Ejecutar la operación de batchUpdate
-    await window.gapi.client.sheets.spreadsheets.batchUpdate({
-        spreadsheetId: SPREADSHEET_ID,
-        resource: {
-            requests: [request]
-        }
+const handleEliminarOS = (osAEliminar) => ejecutarOperacion(async () => {
+  if (!osAEliminar.rowIndex) throw new Error("OS sin rowIndex.");
+  if (osSheetId === null) throw new Error("ID de la hoja 'OS' no encontrado.");
+  
+  if (osList.length === 1) {
+    await window.gapi.client.sheets.spreadsheets.values.clear({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `OS!A${osAEliminar.rowIndex}:O${osAEliminar.rowIndex}`
     });
-
+  } else {
+    await window.gapi.client.sheets.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: {
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId: osSheetId,
+              dimension: "ROWS",
+              startIndex: osAEliminar.rowIndex - 1,
+              endIndex: osAEliminar.rowIndex
+            }
+          }
+        }]
+      }
+    });
+  }
 }, {
-    successMessage: "Orden de Servicio eliminada con éxito.",
-    errorMessage: "Error al eliminar la Orden de Servicio."
+  successMessage: "Orden de Servicio eliminada.",
+  errorMessage: "Error al eliminar la OS."
 });
 
 
